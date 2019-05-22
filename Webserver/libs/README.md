@@ -1,0 +1,1 @@
+Libraries from [javavp8decoder](https://sourceforge.net/projects/javavp8decoder/files/imageIO%20Plugin/)

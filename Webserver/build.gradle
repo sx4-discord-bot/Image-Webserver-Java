@@ -1,0 +1,24 @@
+apply plugin: 'java-library'
+
+targetCompatibility = 1.10
+sourceCompatibility = 1.10
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+	compile group: 'org.glassfish.jersey.core', name: 'jersey-server', version: '2.28'
+	compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet', version: '2.28'
+	compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.28'
+	compile group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.28'
+	
+	compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.4.14.v20181114'
+	compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '9.4.14.v20181114'
+	
+	compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.0-b180830.0359'
+	
+	compile group: 'com.jhlabs', name: 'filters', version: '2.0.235-1'
+    
+    compile fileTree(dir: 'libs', include: '*.jar')
+}
