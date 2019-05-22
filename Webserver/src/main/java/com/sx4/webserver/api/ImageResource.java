@@ -71,6 +71,28 @@ public class ImageResource {
 	private static List<String> statuses = List.of("online", "idle", "dnd", "offline", "streaming");
 	
 	@GET
+	@Path("/resize")
+	@Produces({"image/png", "text/plain"})
+	public Response getResizedImage(@QueryParam("image") String imageUrl, @QueryParam("height") int height, @QueryParam("width") int width) throws Exception {
+		URL url;
+		try {
+			url = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
+		} catch (Exception e) {
+			return Response.status(400).entity("That is not a valid url :no_entry:").header("Content-Type", "text/plain").build();
+		}
+		
+		try {
+			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+				return asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
+			});
+			
+			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
+		} catch (IIOException e) {
+			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+	}
+	
+	@GET
 	@Path("/hot")
 	@Produces({"image/png", "text/plain"})
 	public Response getHotImage(@QueryParam("image") String query) throws Exception {
