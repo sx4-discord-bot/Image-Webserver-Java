@@ -861,7 +861,7 @@ public class ImageResource {
 			return Response.ok(getImageBytes(backgroundImage)).type("image/png").build();
 		} else {	
 			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(backgroundUrl, (frame) -> {
-				frame = asBufferedImage(frame.getScaledInstance(1280, 720, Image.SCALE_DEFAULT));
+				frame = asBufferedImage(frame.getScaledInstance(1280, totalHeight, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphicsBackground = frame.createGraphics();
 			
@@ -977,7 +977,7 @@ public class ImageResource {
 		
 		BufferedImage background = fillImage(new BufferedImage(2560, 1440, BufferedImage.TYPE_INT_ARGB), image == null ? new Color(114, 137, 218) : new Color(0, 0, 0, 0));
 		
-		Color colour = Color.decode(profileColour);	     
+		Color colour = Color.decode(profileColour);		 
 		BufferedImage avatarOutline = fillImage(new BufferedImage(470, 470, BufferedImage.TYPE_INT_ARGB), colour);
 		BufferedImage namePlate = fillImage(new BufferedImage(2000, 500, BufferedImage.TYPE_INT_ARGB), new Color(35, 39, 42));		
 		BufferedImage statsPlate = fillImage(new BufferedImage(2000, 150, BufferedImage.TYPE_INT_ARGB), new Color(44, 47, 51)); 		
@@ -1015,7 +1015,7 @@ public class ImageResource {
 			
 		graphics.setStroke(new BasicStroke(10));
 		graphics.setColor(colour); 
-		    
+			
 		/* Box 1 */
 		graphics.drawRect(75, 755, 1000, 600);
 
@@ -1031,10 +1031,10 @@ public class ImageResource {
 		graphics.drawLine(500, 510, 500, 650);
 		graphics.drawLine(1000, 510, 1000, 650);
 		graphics.drawLine(1500, 510, 1500, 650);
-		    
+			
 		RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-	    graphics.setRenderingHints(hints);
-		    
+		graphics.setRenderingHints(hints);
+			
 		int fontSize = getSetSizeText(graphics, 1435, Fonts.EXO_REGULAR, 216, userName);
 		Font nameFont = Fonts.EXO_REGULAR.deriveFont(0, fontSize);
 		graphics.setFont(nameFont);
@@ -1078,7 +1078,7 @@ public class ImageResource {
 		
 		BufferedImage colourImage;
 		try {
-		    colourImage = fillImage(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB), colour);
+			colourImage = fillImage(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB), colour);
 		} catch (Exception e) {
 			return Response.status(400).entity("Hex code is invalid :no_entry:").build();
 		}
@@ -1097,7 +1097,7 @@ public class ImageResource {
 		
 		Color firstColour = null;
 		Color secondColour = null;
-		if (status.equals("offline")) {
+		if (status.equals("offline") || status.equals("invisible")) {
 			firstColour = Color.decode("#747f8d");
 			secondColour = new Color(199, 204, 209);
 		} else if (status.equals("dnd")) {
@@ -1211,7 +1211,7 @@ public class ImageResource {
 		Graphics2D graphics = scrollImage.createGraphics();
 		
 		RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-	    graphics.setRenderingHints(hints);
+		graphics.setRenderingHints(hints);
 		
 		text = getNewLinedWidthText(graphics, arial, text, 90);
 		
@@ -1254,7 +1254,7 @@ public class ImageResource {
 		Graphics2D graphics = driftImage.createGraphics();
 		
 		RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-	    graphics.setRenderingHints(hints);
+		graphics.setRenderingHints(hints);
 		
 		leftText = getNewLinedWidthText(graphics, arial, leftText, 80);
 		if (rightText != null) {

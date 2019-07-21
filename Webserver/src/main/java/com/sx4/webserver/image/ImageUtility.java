@@ -188,16 +188,16 @@ public class ImageUtility {
 	}
 	
 	public static void drawText(Graphics2D graphics, String text, int x, int y) {
-	    drawText(graphics, text, x, y, 0);
+		drawText(graphics, text, x, y, 0);
 	}
 
 	public static void drawText(Graphics2D graphics, String text, int x, int y, int padding) {
-	    int lineHeight = graphics.getFontMetrics().getHeight();
-	    
-	    String[] lines = text.split("\n");
-	    for(int lineCount = 0; lineCount < lines.length; lineCount++) {
-	        graphics.drawString(lines[lineCount], x, y + lineCount * (lineHeight + padding));
-	    }
+		int lineHeight = graphics.getFontMetrics().getHeight();
+		
+		String[] lines = text.split("\n");
+		for(int lineCount = 0; lineCount < lines.length; lineCount++) {
+			graphics.drawString(lines[lineCount], x, y + lineCount * (lineHeight + padding));
+		}
 	}
 	
 	public static BufferedImage circlify(Image image) {

@@ -4,7 +4,7 @@ targetCompatibility = 1.10
 sourceCompatibility = 1.10
 
 repositories {
-    jcenter()
+	jcenter()
 }
 
 dependencies {
@@ -19,6 +19,6 @@ dependencies {
 	compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.0-b180830.0359'
 	
 	compile group: 'com.jhlabs', name: 'filters', version: '2.0.235-1'
-    
-    compile fileTree(dir: 'libs', include: '*.jar')
+	
+	compile fileTree(dir: 'libs', include: '*.jar')
 }
