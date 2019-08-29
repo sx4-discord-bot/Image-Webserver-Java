@@ -68,7 +68,7 @@ public class ImageResource {
 	
 	public static final String IMAGE_PATH = "resources/images/";
 	
-	private static List<String> statuses = List.of("online", "idle", "dnd", "offline", "streaming");
+	private static List<String> statuses = List.of("online", "idle", "dnd", "offline", "streaming", "invisible");
 	
 	@GET
 	@Path("/resize")
@@ -320,15 +320,18 @@ public class ImageResource {
 			return Response.status(400).entity("The second url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
 		}
 		
-		BufferedImage image = new BufferedImage(880, 280, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage image = new BufferedImage(930, 290, BufferedImage.TYPE_INT_ARGB);
 		BufferedImage heart = ImageIO.read(new File(IMAGE_PATH + "heart.png"));
-		Image firstResizedAvatar = firstAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT);
-		Image secondResizedAvatar = secondAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT);
+		Image avatarOutline = circlify(fillImage(new BufferedImage(290, 290, BufferedImage.TYPE_INT_ARGB), Color.WHITE));
+		Image firstResizedAvatar = circlify(firstAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT));
+		Image secondResizedAvatar = circlify(secondAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT));
 		
 		Graphics graphics = image.getGraphics();
-		graphics.drawImage(firstResizedAvatar, 0, 0, null);
-		graphics.drawImage(heart, 280, 0, null);
-		graphics.drawImage(secondResizedAvatar, 600, 0, null);
+		graphics.drawImage(avatarOutline, 0, 0, null);
+		graphics.drawImage(avatarOutline, 640, 0, null);
+		graphics.drawImage(firstResizedAvatar, 5, 5, null);
+		graphics.drawImage(heart, 305, 0, null);
+		graphics.drawImage(secondResizedAvatar, 645, 5, null);
 		
 		return Response.ok(getImageBytes(image)).build();	
 	}
@@ -1092,7 +1095,7 @@ public class ImageResource {
 	public Response getStatusImage(@QueryParam("image") String avatarUrl, @QueryParam("status") String status) {
 		status = status.toLowerCase();
 		if (!statuses.contains(status)) {
-			return Response.status(400).entity("Invalid status given").build();
+			return Response.status(400).entity("Invalid status given :no_entry:").build();
 		}
 		
 		Color firstColour = null;
