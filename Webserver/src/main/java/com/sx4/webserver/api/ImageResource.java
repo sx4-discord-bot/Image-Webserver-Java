@@ -75,39 +75,64 @@ public class ImageResource {
 	
 	private static List<String> statuses = List.of("online", "idle", "dnd", "offline", "streaming", "invisible");
 	
+	private String getParameterType(Parameter parameter) {
+		String typeName = parameter.getType().getName();
+		
+		String type;
+		if (typeName.contains(".")) {
+			String[] typeSplit = typeName.split("\\.");
+			type = typeSplit[typeSplit.length - 1];
+		} else {
+			type = typeName;
+		}
+		
+		return type;
+	}
+	
 	@GET
 	@Path("/endpoints")
 	@Produces({"text/plain"})
 	public Response getEndpoints() {
-		StringBuilder stringBuilder = new StringBuilder("All endpoints are as listed:\n\n");
+		StringBuilder stringBuilder = new StringBuilder();
 		
 		int maxLength = 0;
+		List<Integer> maxLengthParameters = new ArrayList<>();
 		for (Method method : ImageResource.class.getDeclaredMethods()) {	
 		    if (method.isAnnotationPresent(Path.class)) {
 		    	maxLength = Math.max(maxLength, ("/api" + method.getAnnotation(Path.class).value() + "/").length());
+		    	
+		    	Parameter[] parameters = method.getParameters();
+		    	for (int i = 0; i < parameters.length; i++) {
+		    		Parameter parameter = parameters[i];
+		    		if (parameter.isAnnotationPresent(QueryParam.class)) {
+			    		String query = " " + parameter.getAnnotation(QueryParam.class).value() + ":" + this.getParameterType(parameter);
+			    		
+			    		if (maxLengthParameters.size() - 1 <= i) {
+			    			maxLengthParameters.add(query.length());
+			    		} else {
+			    			maxLengthParameters.remove(i);
+			    			maxLengthParameters.add(i, Math.max(query.length(), maxLengthParameters.get(i)));
+			    		}
+		    		}
+		    	}
 		    }
 		}
 		
 		for (Method method : ImageResource.class.getDeclaredMethods()) {	
 			if (method.isAnnotationPresent(GET.class)) {
-		    	stringBuilder.append("GET ");
+		    	stringBuilder.append("GET     ");
 		    } else if (method.isAnnotationPresent(POST.class)) {
-		    	stringBuilder.append("POST ");
+		    	stringBuilder.append("POST     ");
 		    }
 			
 		    if (method.isAnnotationPresent(Path.class)) {
-		    	int parameters = 0;
-				for (Parameter parameter : method.getParameters()) {
+		    	stringBuilder.append(String.format("%-" + (maxLength + 5) + "s", "/api" + method.getAnnotation(Path.class).value() + "/"));
+		    	
+		    	Parameter[] newParameters = method.getParameters();
+				for (int i = 0; i < newParameters.length; i++) {
+					Parameter parameter = newParameters[i];
 					if (parameter.isAnnotationPresent(QueryParam.class)) {
-						parameters++;
-					}
-				}
-		    	
-		    	stringBuilder.append(String.format(parameters == 0 ? "%s" : "%-" + (maxLength + 5) + "s", "/api" + method.getAnnotation(Path.class).value() + "/"));
-		    	
-				for (Parameter parameter : method.getParameters()) {
-					if (parameter.isAnnotationPresent(QueryParam.class)) {		    		
-			    		stringBuilder.append(" " + parameter.getAnnotation(QueryParam.class).value());
+			    		stringBuilder.append(String.format("%-" + (maxLengthParameters.get(i) + 5) + "s", " " + parameter.getAnnotation(QueryParam.class).value() + ":" + this.getParameterType(parameter)));
 					}
 				}
 				
@@ -115,7 +140,10 @@ public class ImageResource {
 		    }
 		}
 		
-		return Response.ok(stringBuilder.toString()).build();
+		String[] splitText = stringBuilder.toString().split("\n");
+		Arrays.sort(splitText, (a, b) -> Integer.compare(b.trim().length(), a.trim().length()));
+		
+		return Response.ok("All endpoints are as listed:\n\n" + String.join("\n", splitText)).build();
 	}
 	
 	@GET
