@@ -105,7 +105,7 @@ public class ImageResource {
 		    	for (int i = 0; i < parameters.length; i++) {
 		    		Parameter parameter = parameters[i];
 		    		if (parameter.isAnnotationPresent(QueryParam.class)) {
-			    		String query = " " + parameter.getAnnotation(QueryParam.class).value() + ":" + this.getParameterType(parameter);
+			    		String query = " " + this.getParameterType(parameter) + " " + parameter.getAnnotation(QueryParam.class).value();
 			    		
 			    		if (maxLengthParameters.size() - 1 <= i) {
 			    			maxLengthParameters.add(query.length());
@@ -122,7 +122,7 @@ public class ImageResource {
 			if (method.isAnnotationPresent(GET.class)) {
 		    	stringBuilder.append("GET     ");
 		    } else if (method.isAnnotationPresent(POST.class)) {
-		    	stringBuilder.append("POST     ");
+		    	stringBuilder.append("POST    ");
 		    }
 			
 		    if (method.isAnnotationPresent(Path.class)) {
@@ -132,7 +132,7 @@ public class ImageResource {
 				for (int i = 0; i < newParameters.length; i++) {
 					Parameter parameter = newParameters[i];
 					if (parameter.isAnnotationPresent(QueryParam.class)) {
-			    		stringBuilder.append(String.format("%-" + (maxLengthParameters.get(i) + 5) + "s", " " + parameter.getAnnotation(QueryParam.class).value() + ":" + this.getParameterType(parameter)));
+			    		stringBuilder.append(String.format("%-" + (maxLengthParameters.get(i) + 5) + "s", " " + this.getParameterType(parameter) + " " + parameter.getAnnotation(QueryParam.class).value()));
 					}
 				}
 				
