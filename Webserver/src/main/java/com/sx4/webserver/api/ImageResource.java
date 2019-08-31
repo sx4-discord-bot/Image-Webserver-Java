@@ -28,6 +28,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -38,6 +40,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +59,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
+import com.jhlabs.image.EdgeFilter;
 import com.jhlabs.image.EmbossFilter;
 import com.jhlabs.image.GaussianFilter;
 import com.sx4.webserver.Fonts;
@@ -70,6 +74,49 @@ public class ImageResource {
 	public static final String IMAGE_PATH = "resources/images/";
 	
 	private static List<String> statuses = List.of("online", "idle", "dnd", "offline", "streaming", "invisible");
+	
+	@GET
+	@Path("/endpoints")
+	@Produces({"text/plain"})
+	public Response getEndpoints() {
+		StringBuilder stringBuilder = new StringBuilder("All endpoints are as listed:\n\n");
+		
+		int maxLength = 0;
+		for (Method method : ImageResource.class.getDeclaredMethods()) {	
+		    if (method.isAnnotationPresent(Path.class)) {
+		    	maxLength = Math.max(maxLength, ("/api" + method.getAnnotation(Path.class).value() + "/").length());
+		    }
+		}
+		
+		for (Method method : ImageResource.class.getDeclaredMethods()) {	
+			if (method.isAnnotationPresent(GET.class)) {
+		    	stringBuilder.append("GET ");
+		    } else if (method.isAnnotationPresent(POST.class)) {
+		    	stringBuilder.append("POST ");
+		    }
+			
+		    if (method.isAnnotationPresent(Path.class)) {
+		    	int parameters = 0;
+				for (Parameter parameter : method.getParameters()) {
+					if (parameter.isAnnotationPresent(QueryParam.class)) {
+						parameters++;
+					}
+				}
+		    	
+		    	stringBuilder.append(String.format(parameters == 0 ? "%s" : "%-" + (maxLength + 5) + "s", "/api" + method.getAnnotation(Path.class).value() + "/"));
+		    	
+				for (Parameter parameter : method.getParameters()) {
+					if (parameter.isAnnotationPresent(QueryParam.class)) {		    		
+			    		stringBuilder.append(" " + parameter.getAnnotation(QueryParam.class).value());
+					}
+				}
+				
+				stringBuilder.append("\n");
+		    }
+		}
+		
+		return Response.ok(stringBuilder.toString()).build();
+	}
 	
 	@GET
 	@Path("/resize")
@@ -316,6 +363,61 @@ public class ImageResource {
 				canny.process();
 				
 				return canny.getEdgesImage();
+			});
+			
+			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
+		} catch (IIOException e) {
+			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+	}
+	
+	@GET
+	@Path("/edge")
+	@Produces({"image/png", "text/plain"})
+	public Response getEdgeImage(@QueryParam("image") String query) throws Exception {
+		URL url;
+		try {
+			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
+		} catch (Exception e) {
+			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+		
+		EdgeFilter filter = new EdgeFilter();
+		
+		try {
+			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+				BufferedImage image = filter.filter(frame, null);
+				
+				return image;
+			});
+			
+			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
+		} catch (IIOException e) {
+			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+	}
+	
+	@GET
+	@Path("/invert")
+	@Produces({"image/png", "text/plain"})
+	public Response getInvertedImage(@QueryParam("image") String query) throws Exception {
+		URL url;
+		try {
+			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
+		} catch (Exception e) {
+			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+		
+		try {
+			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+				for (int height = 0; height < frame.getHeight(); height++) {
+					for (int width = 0; width < frame.getWidth(); width++) {
+						Color oldColour = new Color(frame.getRGB(width, height));
+						frame.setRGB(width, height, new Color(255 - oldColour.getRed(), 255 - oldColour.getGreen(), 255 - oldColour.getBlue()).hashCode());
+					}
+				}
+				
+				return frame;
 			});
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
