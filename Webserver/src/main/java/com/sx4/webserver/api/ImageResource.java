@@ -60,6 +60,7 @@ import com.jhlabs.image.EmbossFilter;
 import com.jhlabs.image.GaussianFilter;
 import com.sx4.webserver.Fonts;
 import com.sx4.webserver.gif.GifWriter;
+import com.sx4.webserver.image.CannyEdgeDetector;
 
 @Path("")
 public class ImageResource {
@@ -281,6 +282,40 @@ public class ImageResource {
 				BufferedImage embossAvatar = filter.filter(frame, null);
 				
 				return embossAvatar;
+			});
+			
+			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
+		} catch (IIOException e) {
+			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+	}
+	
+	@GET
+	@Path("/canny")
+	@Produces({"image/png", "text/plain"})
+	public Response getCannyImage(@QueryParam("image") String query) throws Exception {
+		URL url;
+		try {
+			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
+		} catch (Exception e) {
+			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+		
+		CannyEdgeDetector canny = new CannyEdgeDetector();
+		canny.setLowThreshold(0.5F);
+		canny.setHighThreshold(1F);
+		
+		try {
+			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+				BufferedImage frameBackground = new BufferedImage(frame.getWidth(), frame.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				
+				Graphics2D graphics = frameBackground.createGraphics();
+				graphics.drawImage(frame, 0, 0, null);
+				
+				canny.setSourceImage(frameBackground);
+				canny.process();
+				
+				return canny.getEdgesImage();
 			});
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
