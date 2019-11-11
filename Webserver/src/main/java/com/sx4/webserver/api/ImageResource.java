@@ -1,18 +1,5 @@
 package com.sx4.webserver.api;
 
-import static com.sx4.webserver.image.ImageUtility.asBufferedImage;
-import static com.sx4.webserver.image.ImageUtility.asRGBA;
-import static com.sx4.webserver.image.ImageUtility.circlify;
-import static com.sx4.webserver.image.ImageUtility.drawText;
-import static com.sx4.webserver.image.ImageUtility.fillImage;
-import static com.sx4.webserver.image.ImageUtility.getImageBytes;
-import static com.sx4.webserver.image.ImageUtility.getNewLinedText;
-import static com.sx4.webserver.image.ImageUtility.getNewLinedWidthText;
-import static com.sx4.webserver.image.ImageUtility.getRGBAValue;
-import static com.sx4.webserver.image.ImageUtility.getSetSizeText;
-import static com.sx4.webserver.image.ImageUtility.rotate;
-import static com.sx4.webserver.image.ImageUtility.updateEachFrame;
-
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -65,6 +52,7 @@ import com.jhlabs.image.GaussianFilter;
 import com.sx4.webserver.Fonts;
 import com.sx4.webserver.gif.GifWriter;
 import com.sx4.webserver.image.CannyEdgeDetector;
+import com.sx4.webserver.image.ImageUtility;
 
 @Path("")
 public class ImageResource {
@@ -158,8 +146,8 @@ public class ImageResource {
 		}
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				return asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				return ImageUtility.asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
 			});
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
@@ -180,11 +168,11 @@ public class ImageResource {
 		}
 		
 		BufferedImage background = new BufferedImage(419, 493, BufferedImage.TYPE_INT_ARGB);
-		BufferedImage image = asBufferedImage(ImageIO.read(new File(IMAGE_PATH + "thats-hot-meme.png")).getScaledInstance(419, 493, Image.SCALE_DEFAULT));
+		BufferedImage image = ImageUtility.asBufferedImage(ImageIO.read(new File(IMAGE_PATH + "thats-hot-meme.png")).getScaledInstance(419, 493, Image.SCALE_DEFAULT));
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				frame = asBufferedImage(frame.getScaledInstance(400, 300, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(400, 300, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphics = background.createGraphics();
 				graphics.drawImage(frame, 8, 213, null);
@@ -212,16 +200,16 @@ public class ImageResource {
 		
 		BufferedImage flag;
 		try {
-			flag = asBufferedImage(ImageIO.read(new URL("http://www.geonames.org/flags/x/" + flagQuery + ".gif")).getScaledInstance(200, 200, Image.SCALE_DEFAULT));
+			flag = ImageUtility.asBufferedImage(ImageIO.read(new URL("http://www.geonames.org/flags/x/" + flagQuery + ".gif")).getScaledInstance(200, 200, Image.SCALE_DEFAULT));
 		} catch (Exception e) {
 			return Response.status(400).entity("Flag initial is invalid :no_entry:").header("Content-Type", "text/plain").build();
 		}
 		
-		BufferedImage image = asBufferedImage(new BufferedImage(200, 200, BufferedImage.TYPE_INT_ARGB).getScaledInstance(200, 200, Image.SCALE_DEFAULT));
+		BufferedImage image = ImageUtility.asBufferedImage(new BufferedImage(200, 200, BufferedImage.TYPE_INT_ARGB).getScaledInstance(200, 200, Image.SCALE_DEFAULT));
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				frame = asBufferedImage(frame.getScaledInstance(200, 200, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(200, 200, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphics = image.createGraphics();
 				graphics.drawImage(frame, 0, 0, null);
@@ -260,12 +248,12 @@ public class ImageResource {
 		Image resizedAvatar = avatar.getScaledInstance(385, 384, Image.SCALE_DEFAULT);
 		
 		GaussianFilter filter = new GaussianFilter(20);
-		BufferedImage blurredAvatar = filter.filter(asBufferedImage(resizedAvatar), null);
+		BufferedImage blurredAvatar = filter.filter(ImageUtility.asBufferedImage(resizedAvatar), null);
 		
 		Graphics graphics = image.getGraphics();
 		graphics.drawImage(blurredAvatar, 384, 0, null);
 		
-		return Response.ok(getImageBytes(image)).build();	
+		return Response.ok(ImageUtility.getImageBytes(image)).build();	
 	}
 	
 	@GET
@@ -307,7 +295,7 @@ public class ImageResource {
 		graphics.drawImage(firstResizedAvatar, 30, 180, null);
 		graphics.drawImage(secondResizedAvatar, 510, 180, null);
 		
-		return Response.ok(getImageBytes(image)).build();	
+		return Response.ok(ImageUtility.getImageBytes(image)).build();	
 	}
 	
 	@GET
@@ -324,8 +312,8 @@ public class ImageResource {
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "fear-meme.png"));
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				frame = asBufferedImage(frame.getScaledInstance(251, 251, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(251, 251, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphics = image.createGraphics();
 				graphics.drawImage(frame, 260, 517, null);
@@ -353,7 +341,7 @@ public class ImageResource {
 		EmbossFilter filter = new EmbossFilter();
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
 				BufferedImage embossAvatar = filter.filter(frame, null);
 				
 				return embossAvatar;
@@ -381,7 +369,7 @@ public class ImageResource {
 		canny.setHighThreshold(1F);
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
 				BufferedImage frameBackground = new BufferedImage(frame.getWidth(), frame.getHeight(), BufferedImage.TYPE_INT_ARGB);
 				
 				Graphics2D graphics = frameBackground.createGraphics();
@@ -413,7 +401,7 @@ public class ImageResource {
 		EdgeFilter filter = new EdgeFilter();
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
 				BufferedImage image = filter.filter(frame, null);
 				
 				return image;
@@ -437,7 +425,7 @@ public class ImageResource {
 		}
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
 				for (int height = 0; height < frame.getHeight(); height++) {
 					for (int width = 0; width < frame.getWidth(); width++) {
 						Color oldColour = new Color(frame.getRGB(width, height));
@@ -487,9 +475,9 @@ public class ImageResource {
 		
 		BufferedImage image = new BufferedImage(930, 290, BufferedImage.TYPE_INT_ARGB);
 		BufferedImage heart = ImageIO.read(new File(IMAGE_PATH + "heart.png"));
-		Image avatarOutline = circlify(fillImage(new BufferedImage(290, 290, BufferedImage.TYPE_INT_ARGB), Color.WHITE));
-		Image firstResizedAvatar = circlify(firstAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT));
-		Image secondResizedAvatar = circlify(secondAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT));
+		Image avatarOutline = ImageUtility.circlify(ImageUtility.fillImage(new BufferedImage(290, 290, BufferedImage.TYPE_INT_ARGB), Color.WHITE));
+		Image firstResizedAvatar = ImageUtility.circlify(firstAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT));
+		Image secondResizedAvatar = ImageUtility.circlify(secondAvatar.getScaledInstance(280, 280, Image.SCALE_DEFAULT));
 		
 		Graphics graphics = image.getGraphics();
 		graphics.drawImage(avatarOutline, 0, 0, null);
@@ -498,7 +486,7 @@ public class ImageResource {
 		graphics.drawImage(heart, 305, 0, null);
 		graphics.drawImage(secondResizedAvatar, 645, 5, null);
 		
-		return Response.ok(getImageBytes(image)).build();	
+		return Response.ok(ImageUtility.getImageBytes(image)).build();	
 	}
 	
 	@GET
@@ -517,8 +505,8 @@ public class ImageResource {
 		Image resizedImage = image.getScaledInstance(493, 511, Image.SCALE_DEFAULT);
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				BufferedImage resizedAvatar = asBufferedImage(frame.getScaledInstance(225, 150, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				BufferedImage resizedAvatar = ImageUtility.asBufferedImage(frame.getScaledInstance(225, 150, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphics = background.createGraphics();
 				graphics.drawImage(resizedAvatar, 15, 310, null);
@@ -548,8 +536,8 @@ public class ImageResource {
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "shit-meme.png"));
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				frame = asBufferedImage(frame.getScaledInstance(192, 192, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(192, 192, Image.SCALE_DEFAULT));
 	
 				AffineTransform transform = new AffineTransform();
 				transform.rotate(Math.toRadians(-50), frame.getWidth()/2, frame.getHeight()/2);
@@ -583,9 +571,9 @@ public class ImageResource {
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "gay.png"));
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				frame = asBufferedImage(frame);
-				BufferedImage resizedImage = asBufferedImage(image.getScaledInstance(frame.getWidth(), frame.getHeight(), Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				frame = ImageUtility.asBufferedImage(frame);
+				BufferedImage resizedImage = ImageUtility.asBufferedImage(image.getScaledInstance(frame.getWidth(), frame.getHeight(), Image.SCALE_DEFAULT));
 				
 				Graphics2D graphics = frame.createGraphics();
 				graphics.drawImage(resizedImage, 0, 0, null);
@@ -613,10 +601,10 @@ public class ImageResource {
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "beautiful.png"));
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {	
-				frame = asBufferedImage(frame.getScaledInstance(90, 104, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(90, 104, Image.SCALE_DEFAULT));
 				
-				frame = rotate(frame, -1);
+				frame = ImageUtility.rotate(frame, -1);
 				
 				Graphics2D graphics = image.createGraphics();
 				graphics.drawImage(frame, 253, 25, null);
@@ -631,10 +619,54 @@ public class ImageResource {
 		}
 	}
 	
-	@GET
+	public enum MentionType {
+		ROLE("@&"),
+		USER("@!", "@"),
+		CHANNEL("#"),
+		EMOTE(":", "a:"),
+		UNKNOWN;
+		
+		private String[] prefixes;
+		
+		private MentionType(String... prefixes) {
+			this.prefixes = prefixes;
+		}
+		
+		private String[] getPrefixes() {
+			return this.prefixes;
+		}
+		
+		public static MentionType getByPrefix(String prefix) {
+			for (MentionType mentionType : MentionType.values()) {
+				for (String mentionPrefix : mentionType.getPrefixes()) {
+					if (mentionPrefix.equals(prefix)) {
+						return mentionType;
+					}
+				}
+			}
+			
+			return MentionType.UNKNOWN;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	@POST
 	@Path("/discord")
-	@Produces({"image/png", "text/plain"})
-	public Response getDiscordImage(@QueryParam("text") String query, @QueryParam("theme") String theme, @QueryParam("name") String name, @QueryParam("colour") String colour, @QueryParam("bot") boolean bot, @QueryParam("image") String avatarUrl) throws Exception {
+	@Produces({"image/png", "text/plain", "image/gif"})
+	public Response getDiscordImage(Map<String, Object> body) throws Exception {
+		String text = (String) body.get("text");
+		String userName = (String) body.get("userName");
+		String colour = (String) body.get("colour");
+		String avatarUrl = (String) body.get("avatarUrl");
+		
+		Map<String, Map<String, String>> users = (Map<String, Map<String, String>>) body.getOrDefault("users", Map.of());
+		Map<String, Map<String, String>> emotes = (Map<String, Map<String, String>>) body.getOrDefault("emotes", Map.of());
+		Map<String, Map<String, String>> channels = (Map<String, Map<String, String>>) body.getOrDefault("channels", Map.of());
+		Map<String, Map<String, String>> roles = (Map<String, Map<String, String>>) body.getOrDefault("roles", Map.of());
+		
+		boolean darkTheme = (boolean) body.getOrDefault("darkTheme", true);
+		boolean bot = (boolean) body.get("bot");
+		
 		URL url;
 		try {
 			url = new URL(URLDecoder.decode(avatarUrl, StandardCharsets.UTF_8));
@@ -656,22 +688,20 @@ public class ImageResource {
 			return Response.status(400).entity("The bot emote url is not an image :no_entry:").header("Content-Type", "text/plain").build();
 		}
 		
-		int breaks = query.trim().split("\n").length - 1; 
+		int breaks = text.trim().split("\n").length - 1; 
 		
-		int times = (int) Math.ceil(query.length()/50D);
+		int times = (int) Math.ceil(text.length()/50D);
 		
 		int height = (breaks * 36) + (times * 36);
 		int length = bot ? 66 : 0;
-		
-		String text = getNewLinedText(query, 50);
 		
 		Font mainText = Fonts.WHITNEY_BOOK.deriveFont(0, 34);
 		Font nameText = Fonts.WHITNEY_MEDIUM.deriveFont(0, 40);
 		Font timeText = Fonts.WHITNEY_LIGHT.deriveFont(0, 24);
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {		
-				frame = circlify(asBufferedImage(frame.getScaledInstance(100, 100, BufferedImage.TYPE_INT_ARGB)));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {
+				frame = ImageUtility.circlify(ImageUtility.asBufferedImage(frame.getScaledInstance(100, 100, BufferedImage.TYPE_INT_ARGB)));
 				
 				BufferedImage image = new BufferedImage(1000, 115 + height, BufferedImage.TYPE_INT_ARGB);
 				Graphics2D graphics = image.createGraphics();
@@ -679,24 +709,211 @@ public class ImageResource {
 				RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 				graphics.setRenderingHints(hints);
 				
-				int nameWidth = graphics.getFontMetrics(nameText).stringWidth(name);
+				int nameWidth = graphics.getFontMetrics(nameText).stringWidth(userName);
 				int nameHeight = 40;
 				
-				graphics.setColor(theme.equals("dark") ? new Color(54, 57, 63) : Color.WHITE);
+				graphics.setColor(darkTheme ? new Color(54, 57, 63) : Color.WHITE);
 				graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
 				graphics.drawImage(frame, 20, 10, null);
 				if (bot) {
 					graphics.drawImage(botImage, 170 + nameWidth, 2, null);
 				}
-				graphics.setColor(theme.equals("white") ? new Color(116, 127, 141) : Color.WHITE);
-				graphics.setFont(mainText);
-				drawText(graphics, text, 160, nameHeight + 54);
+				
 				graphics.setColor(Color.decode("#" + colour));
 				graphics.setFont(nameText);
-				graphics.drawString(name, 160, 6 + nameHeight);
+				graphics.drawString(userName, 160, 6 + nameHeight);
 				graphics.setColor(new Color(122, 125, 130));
 				graphics.setFont(timeText);
 				graphics.drawString("Today at " + LocalTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("HH:mm")), 170 + nameWidth + length, (nameHeight/2) - 2 + 24);
+				
+				Color mentionBox = new Color(114, 137, 218, 26);
+				Color mentionText = new Color(114, 137, 218);
+				Color textColour = !darkTheme ? new Color(116, 127, 141) : Color.WHITE;
+				graphics.setColor(textColour);
+				graphics.setFont(mainText);
+				
+				int textHeight = nameHeight + 54, textWidth = 160, fontHeight = graphics.getFontMetrics().getHeight();
+				
+				String[] splitText = text.trim().split(" ");
+				for (int index = 0; index < splitText.length; index++) {
+					String word = splitText[index] + " ";
+					if (word.contains("<") && word.contains(">")) {
+						for (int i = 0; i < word.length(); i++) {
+							char character = word.charAt(i);
+							if (character == '<' && (i == 0 || word.charAt(i - 1) != '\\')) {
+								int moreThanIndex = word.indexOf('>', i + 1);
+								if (moreThanIndex != -1 && word.charAt(moreThanIndex - 1) != '\\') {
+									StringBuilder mentionPrefix = new StringBuilder();
+						        	char prefix;
+						        	
+						        	int prefixIndex = i + 1;
+						        	while (!Character.isLetterOrDigit(prefix = word.charAt(prefixIndex)) && prefixIndex != moreThanIndex) {
+						        		prefixIndex++;
+						        		mentionPrefix.append(prefix);
+						        	}
+						        	
+						        	if (prefixIndex != moreThanIndex) {
+						        		String mentionString, id;
+						        		int mentionStringWidth;
+										switch (MentionType.getByPrefix(mentionPrefix.toString())) {
+							        		case USER:
+							        			id = word.substring(prefixIndex, moreThanIndex);
+							        			Map<String, String> user = users.get(id);
+							        			
+							        			mentionString = user == null ? "<" + mentionPrefix.toString() + id + ">" : "@" + user.get("name");
+							        			
+							        			mentionStringWidth = graphics.getFontMetrics().stringWidth(mentionString);
+							        			if (textWidth + mentionStringWidth > 975) {
+													textHeight += fontHeight;
+													textWidth = 160;
+												} 
+							        			
+							        			graphics.setColor(mentionBox);
+							        			graphics.fillRect(textWidth - 2, textHeight - fontHeight + 11, mentionStringWidth + 5, fontHeight - 5);
+							        			graphics.setColor(mentionText);
+							        			
+								        		graphics.drawString(mentionString, textWidth, textHeight);
+								        		textWidth += mentionStringWidth + 7;
+							        			
+							        			graphics.setColor(textColour);
+						        				
+						        				i = moreThanIndex;
+							        			
+							        			continue;
+							        		case ROLE:
+							        			id = word.substring(prefixIndex, moreThanIndex);
+							        			Map<String, String> role = roles.get(id);
+							        			
+							        			mentionString = role == null ? "<" + mentionPrefix.toString() + id + ">" : "@" + role.get("name");
+							        			String roleColour = role == null ? null : role.get("colour");
+							        			
+							        			mentionStringWidth = graphics.getFontMetrics().stringWidth(mentionString);
+							        			if (textWidth + mentionStringWidth > 975) {
+													textHeight += fontHeight;
+													textWidth = 160;
+												} 
+							        			
+							        			Color roleMentionColour = null;
+							        			if (roleColour != null) {
+							        				roleMentionColour = Color.decode("#" + roleColour);
+							        			}
+							        			
+							        			graphics.setColor(roleColour == null ? mentionBox : new Color(roleMentionColour.getRed(), roleMentionColour.getGreen(), roleMentionColour.getBlue(), 26));
+							        			graphics.fillRect(textWidth - 2, textHeight - fontHeight + 11, mentionStringWidth + 5, fontHeight - 5);
+							        			graphics.setColor(roleColour == null ? mentionText : Color.decode("#" + roleColour));
+							        			
+							        			graphics.drawString(mentionString, textWidth, textHeight);
+							        			textWidth += mentionStringWidth + 7;
+							        			
+							        			graphics.setColor(textColour);
+							        			
+							        			i = moreThanIndex;
+							        			
+							        			continue;
+							        		case CHANNEL:
+							        			id = word.substring(prefixIndex, moreThanIndex);
+							        			Map<String, String> channel = channels.get(id);
+							        			
+							        			mentionString = channel == null ? "<" + mentionPrefix.toString() + id + ">" : "#" + channel.get("name");
+							        			
+							        			mentionStringWidth = graphics.getFontMetrics().stringWidth(mentionString);
+							        			if (textWidth + mentionStringWidth > 975) {
+													textHeight += fontHeight;
+													textWidth = 160;
+												} 
+							        			
+							        			graphics.setColor(mentionBox);
+							        			graphics.fillRect(textWidth - 2, textHeight - fontHeight + 11, mentionStringWidth + 5, fontHeight - 5);
+							        			graphics.setColor(mentionText);
+							        			
+							        			graphics.drawString(mentionString, textWidth, textHeight);
+							        			textWidth += mentionStringWidth + 7;
+							        			
+							        			graphics.setColor(textColour);
+							        			
+							        			i = moreThanIndex;
+							        			
+							        			continue;
+							        		case EMOTE:
+							        			int nextColonIndex = i + 1 + mentionPrefix.length();
+							        			
+							        			while (word.charAt(++nextColonIndex) != ':' && nextColonIndex != moreThanIndex);
+							        			
+							        			if (nextColonIndex != moreThanIndex) {
+							        				id = word.substring(nextColonIndex + 1, moreThanIndex);
+								        			Map<String, String> emote = emotes.get(id);
+								        			if (emote != null) {
+								        				String mentionEmoteUrl = emote.get("url");
+								        				
+								        				try {
+								        					Image emoteImage = ImageIO.read(new URL(mentionEmoteUrl)).getScaledInstance(40, 40, Image.SCALE_DEFAULT);
+								        					
+								        					if (textWidth + 40 > 975) {
+																textHeight += fontHeight;
+																textWidth = 160;
+															} 
+								        					
+								        					graphics.drawImage(emoteImage, textWidth, textHeight - 31, null);
+								        					textWidth += 40;
+										        			
+										        			i = moreThanIndex;
+								        					
+								        					continue;
+								        				} catch (Exception e) {}
+								        			}
+							        			}
+							        		default:
+							        			break;
+										}
+						        	}
+								}
+							}
+							
+							int charWidth = graphics.getFontMetrics().charWidth(character);
+							if (textWidth + charWidth > 975) {
+								textHeight += fontHeight;
+								textWidth = 160;
+							}
+							
+							graphics.drawString(String.valueOf(character), textWidth, textHeight);
+							
+							textWidth += charWidth;
+						}
+					} else {
+						int wordWidth = graphics.getFontMetrics().stringWidth(word);
+						if (wordWidth > 975) {
+							int end = word.length();
+							int start = 0;
+							while (true) {
+								String cutWord = word.substring(start, end);
+								int cutWordWidth = graphics.getFontMetrics().stringWidth(cutWord);
+								if ((start == 0 && cutWordWidth > 975 - textWidth) || cutWordWidth > 820) {
+									end -= 1;
+								} else {
+									graphics.drawString(cutWord, textWidth, textHeight);
+									textWidth = 160;
+									textHeight += fontHeight;
+									
+									if (end == word.length()) {
+										break;
+									} else {
+										start = end;
+										end = word.length();
+									}
+								}
+							}
+						} else {
+							if (textWidth + wordWidth > 975) {
+								textHeight += fontHeight;
+								textWidth = 160;
+							}
+							
+							graphics.drawString(word, textWidth, textHeight);
+							
+							textWidth += wordWidth;
+						}
+					}
+				}
 				
 				return image;
 			});
@@ -711,7 +928,7 @@ public class ImageResource {
 	@Path("/trump")
 	@Produces({"image/png", "text/plain"})
 	public Response getTrumpImage(@QueryParam("text") String query) throws Exception {	
-		String text = getNewLinedText(query, 70);
+		String text = ImageUtility.getNewLinedText(query, 70);
 		
 		Font textFont = new Font("Arial", 0, 25);
 		
@@ -724,9 +941,9 @@ public class ImageResource {
 		
 		graphics.setColor(Color.BLACK);
 		graphics.setFont(textFont);
-		drawText(graphics, text, 60, 150);
+		ImageUtility.drawText(graphics, text, 60, 150);
 		
-		return Response.ok(getImageBytes(image)).build();
+		return Response.ok(ImageUtility.getImageBytes(image)).build();
 	}
 	
 	@POST
@@ -766,9 +983,9 @@ public class ImageResource {
 			}
 				
 			try {
-				likeAvatars.add(circlify(ImageIO.read(url).getScaledInstance(36, 36, Image.SCALE_DEFAULT)));
+				likeAvatars.add(ImageUtility.circlify(ImageIO.read(url).getScaledInstance(36, 36, Image.SCALE_DEFAULT)));
 			} catch (Exception e) {
-				likeAvatars.add(circlify(ImageIO.read(new URL("https://cdn.discordapp.com/embed/avatars/" + random.nextInt(5) + ".png")).getScaledInstance(36, 36, Image.SCALE_DEFAULT)));
+				likeAvatars.add(ImageUtility.circlify(ImageIO.read(new URL("https://cdn.discordapp.com/embed/avatars/" + random.nextInt(5) + ".png")).getScaledInstance(36, 36, Image.SCALE_DEFAULT)));
 			}
 		}
 		
@@ -788,7 +1005,7 @@ public class ImageResource {
 		
 		graphics.setFont(textFont);
 
-		String[] splitNewLineText = getNewLinedWidthText(graphics, textFont, text, 833).split("\n");
+		String[] splitNewLineText = ImageUtility.getNewLinedWidthText(graphics, textFont, text, 833).split("\n");
 		int width = 60, height = 155;
 		for (String newLine : splitNewLineText) {
 			String[] splitText = newLine.split(" ");
@@ -808,7 +1025,7 @@ public class ImageResource {
 			width = 60;
 		}
 		
-		graphics.drawImage(circlify(avatar), 60, 44, null);
+		graphics.drawImage(ImageUtility.circlify(avatar), 60, 44, null);
 		
 		graphics.setColor(Color.BLACK);
 		graphics.setFont(nameFont);
@@ -841,7 +1058,7 @@ public class ImageResource {
 			additional += 44;
 		}
 		
-		return Response.ok(getImageBytes(image)).build();
+		return Response.ok(ImageUtility.getImageBytes(image)).build();
 	}
 	
 	@GET
@@ -858,10 +1075,10 @@ public class ImageResource {
 		int width = 256;
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {		
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {		
 				double widthPercent = width/(double) frame.getWidth();
 				int height = (int) (frame.getHeight() * widthPercent);
-				frame = asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
 				
 				BufferedImage white = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 				
@@ -874,7 +1091,7 @@ public class ImageResource {
 						double o = Math.sqrt(Math.pow(r, 2)*0.299 + Math.pow(g, 2)*0.587 + Math.pow(b, 2)*0.114);
 						o *= ((o - 102) / 128);
 						o = 255 - o;
-						frame.setRGB(w, h, asRGBA(255, 0, 0, getRGBAValue((int) o)));
+						frame.setRGB(w, h, ImageUtility.asRGBA(255, 0, 0, ImageUtility.getRGBAValue((int) o)));
 					}
 				}
 				
@@ -906,10 +1123,10 @@ public class ImageResource {
 		int width = 256;
 		
 		try {
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(url, (frame) -> {
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {
 				double widthPercent = width/(double) frame.getWidth();
 				int height = (int) (frame.getHeight() * widthPercent);
-				frame = asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
 				
 				for (int w = 0; w < frame.getWidth(); w++) {
 					for (int h = 0; h < frame.getHeight(); h++) {
@@ -920,7 +1137,7 @@ public class ImageResource {
 						int a = (rgb >> 24) & 0xFF;
 						double o = Math.sqrt(Math.pow(r, 2)*0.299 + Math.pow(g, 2)*0.587 + Math.pow(b, 2)*0.114);
 						o *= ((o - 102) / 128);
-						frame.setRGB(w, h, asRGBA(getRGBAValue((int) o), getRGBAValue((int) ((o - 10) / 2)), 0, a));
+						frame.setRGB(w, h, ImageUtility.asRGBA(ImageUtility.getRGBAValue((int) o), ImageUtility.getRGBAValue((int) ((o - 10) / 2)), 0, a));
 					}
 				}
 				
@@ -970,7 +1187,7 @@ public class ImageResource {
 		
 		BufferedImage avatar;
 		try {
-			avatar = circlify(asBufferedImage(ImageIO.read(userAvatarUrl).getScaledInstance(300, 300, BufferedImage.TYPE_INT_ARGB)));
+			avatar = ImageUtility.circlify(ImageUtility.asBufferedImage(ImageIO.read(userAvatarUrl).getScaledInstance(300, 300, BufferedImage.TYPE_INT_ARGB)));
 		} catch (Exception e) {
 			return Response.status(400).build();
 		}
@@ -985,7 +1202,7 @@ public class ImageResource {
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, avatarOutlineRectangle.getWidth(), avatarOutlineRectangle.getHeight());
 		
-		BufferedImage avatarOutline = circlify(avatarOutlineRectangle);
+		BufferedImage avatarOutline = ImageUtility.circlify(avatarOutlineRectangle);
 		
 		String[] userSplit = userFullName.split("#");
 		String userName = userSplit[0];
@@ -998,14 +1215,14 @@ public class ImageResource {
 		int width = 1420, height = 280;
 		
 		Graphics2D graphicsAvatar = avatarOutline.createGraphics();
-		graphicsAvatar.drawImage(circlify(avatar), 5, 5, null);
+		graphicsAvatar.drawImage(ImageUtility.circlify(avatar), 5, 5, null);
 		
 		BufferedImage backgroundImage;
 		if (backgroundUrl == null) {
 			backgroundImage  = new BufferedImage(1280, totalHeight, BufferedImage.TYPE_INT_ARGB);
 			Graphics2D graphicsBackground = backgroundImage.createGraphics();
 			
-			int fontSize = getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
+			int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
 			Font nameFont = Fonts.UNI_SANS.deriveFont(0, fontSize);
 			
 			RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -1026,14 +1243,14 @@ public class ImageResource {
 			graphicsBackground.setColor(new Color(153, 170, 183));
 			graphicsBackground.drawString(userDiscrim, (width-nameFontWidth)/2 + nameFontWidth, avatarX + (height-nameFontHeight)/2 + (nameFontHeight - discrimFontHeight) + 30);
 			
-			return Response.ok(getImageBytes(backgroundImage)).type("image/png").build();
+			return Response.ok(ImageUtility.getImageBytes(backgroundImage)).type("image/png").build();
 		} else {	
-			Entry<String, ByteArrayOutputStream> entry = updateEachFrame(backgroundUrl, (frame) -> {
-				frame = asBufferedImage(frame.getScaledInstance(1280, totalHeight, Image.SCALE_DEFAULT));
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(backgroundUrl, (frame) -> {
+				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(1280, totalHeight, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphicsBackground = frame.createGraphics();
 			
-				int fontSize = getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
+				int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
 				Font nameFont = Fonts.UNI_SANS.deriveFont(0, fontSize);
 				
 				RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -1073,7 +1290,7 @@ public class ImageResource {
 		String googleText;
 		BufferedImage[] images = new BufferedImage[text.length() + 24];
 		for (int i = 0; i < text.length() + 24; i++) {
-			BufferedImage clone = asBufferedImage(googleImage);
+			BufferedImage clone = ImageUtility.asBufferedImage(googleImage);
 			Graphics2D graphics = clone.createGraphics();
 			
 			RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -1143,28 +1360,28 @@ public class ImageResource {
 			image = null;
 		}
 		
-		BufferedImage background = fillImage(new BufferedImage(2560, 1440, BufferedImage.TYPE_INT_ARGB), image == null ? new Color(114, 137, 218) : new Color(0, 0, 0, 0));
+		BufferedImage background = ImageUtility.fillImage(new BufferedImage(2560, 1440, BufferedImage.TYPE_INT_ARGB), image == null ? new Color(114, 137, 218) : new Color(0, 0, 0, 0));
 		
 		Color colour = Color.decode(profileColour);		 
-		BufferedImage avatarOutline = fillImage(new BufferedImage(470, 470, BufferedImage.TYPE_INT_ARGB), colour);
-		BufferedImage namePlate = fillImage(new BufferedImage(2000, 500, BufferedImage.TYPE_INT_ARGB), new Color(35, 39, 42));		
-		BufferedImage statsPlate = fillImage(new BufferedImage(2000, 150, BufferedImage.TYPE_INT_ARGB), new Color(44, 47, 51)); 		
-		BufferedImage badgePlate = fillImage(new BufferedImage(560, 650, BufferedImage.TYPE_INT_ARGB), new Color(44, 47, 51)); 
-		BufferedImage box = fillImage(new BufferedImage(1000, 600, BufferedImage.TYPE_INT_ARGB), new Color(0, 0, 0, 175));
+		BufferedImage avatarOutline = ImageUtility.fillImage(new BufferedImage(470, 470, BufferedImage.TYPE_INT_ARGB), colour);
+		BufferedImage namePlate = ImageUtility.fillImage(new BufferedImage(2000, 500, BufferedImage.TYPE_INT_ARGB), new Color(35, 39, 42));		
+		BufferedImage statsPlate = ImageUtility.fillImage(new BufferedImage(2000, 150, BufferedImage.TYPE_INT_ARGB), new Color(44, 47, 51)); 		
+		BufferedImage badgePlate = ImageUtility.fillImage(new BufferedImage(560, 650, BufferedImage.TYPE_INT_ARGB), new Color(44, 47, 51)); 
+		BufferedImage box = ImageUtility.fillImage(new BufferedImage(1000, 600, BufferedImage.TYPE_INT_ARGB), new Color(0, 0, 0, 175));
 		
 		Font statsFont = Fonts.EXO_REGULAR.deriveFont(0, 45);
 		Font titleFont = Fonts.EXO_REGULAR.deriveFont(0, 70);
 		
-		BufferedImage avatar = circlify(asBufferedImage(ImageIO.read(userAvatar).getScaledInstance(450, 450, Image.SCALE_DEFAULT)));
+		BufferedImage avatar = ImageUtility.circlify(ImageUtility.asBufferedImage(ImageIO.read(userAvatar).getScaledInstance(450, 450, Image.SCALE_DEFAULT)));
 		
-		background.setRGB(0, 0, asRGBA(255, 255, 255, 255));
+		background.setRGB(0, 0, ImageUtility.asRGBA(255, 255, 255, 255));
 			
 		Graphics2D graphics = background.createGraphics();
 		if (image != null) {
 			graphics.drawImage(image, 0, 0, null);
 		}
 		graphics.drawImage(namePlate, 0, 0, null);
-		graphics.drawImage(circlify(avatarOutline), 15, 15, null);
+		graphics.drawImage(ImageUtility.circlify(avatarOutline), 15, 15, null);
 		graphics.drawImage(avatar, 25, 25, null);
 		graphics.drawImage(statsPlate, 0, 500, null);
 		graphics.drawImage(badgePlate, 2000, 0, null);
@@ -1173,7 +1390,7 @@ public class ImageResource {
 		
 		int badgeX = 0, badgeY = 0;
 		for (String badgePath : badges) {
-			graphics.drawImage(asBufferedImage(ImageIO.read(new File(IMAGE_PATH + "badges/" + badgePath)).getScaledInstance(100, 100, Image.SCALE_DEFAULT)), 2030 + badgeX, 130 + badgeY, null);
+			graphics.drawImage(ImageUtility.asBufferedImage(ImageIO.read(new File(IMAGE_PATH + "badges/" + badgePath)).getScaledInstance(100, 100, Image.SCALE_DEFAULT)), 2030 + badgeX, 130 + badgeY, null);
 			badgeX += 130;
 			if (badgeX >= 520) {
 				badgeY += 120;
@@ -1203,7 +1420,7 @@ public class ImageResource {
 		RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		graphics.setRenderingHints(hints);
 			
-		int fontSize = getSetSizeText(graphics, 1435, Fonts.EXO_REGULAR, 216, userName);
+		int fontSize = ImageUtility.getSetSizeText(graphics, 1435, Fonts.EXO_REGULAR, 216, userName);
 		Font nameFont = Fonts.EXO_REGULAR.deriveFont(0, fontSize);
 		graphics.setFont(nameFont);
 		int nameFontWidth = graphics.getFontMetrics().stringWidth(userName);
@@ -1224,8 +1441,8 @@ public class ImageResource {
 			}
 		}
 			
-		drawText(graphics, marriedMessage, 1515, 915, -13);
-		drawText(graphics, getNewLinedWidthText(graphics, statsFont, description, 930), 95, 915);
+		ImageUtility.drawText(graphics, marriedMessage, 1515, 915, -13);
+		ImageUtility.drawText(graphics, ImageUtility.getNewLinedWidthText(graphics, statsFont, description, 930), 95, 915);
 			
 		graphics.setFont(titleFont);
 		graphics.drawString("Badges", 2160, 90);
@@ -1246,7 +1463,7 @@ public class ImageResource {
 		
 		BufferedImage colourImage;
 		try {
-			colourImage = fillImage(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB), colour);
+			colourImage = ImageUtility.fillImage(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB), colour);
 		} catch (Exception e) {
 			return Response.status(400).entity("Hex code is invalid :no_entry:").build();
 		}
@@ -1294,8 +1511,8 @@ public class ImageResource {
 		
 		Entry<String, ByteArrayOutputStream> entry;
 		try {
-			entry = updateEachFrame(avatar, (frame) -> {
-				frame = circlify(asBufferedImage(frame.getScaledInstance(270, 270, Image.SCALE_DEFAULT)));
+			entry = ImageUtility.updateEachFrame(avatar, (frame) -> {
+				frame = ImageUtility.circlify(ImageUtility.asBufferedImage(frame.getScaledInstance(270, 270, Image.SCALE_DEFAULT)));
 				
 				Graphics2D graphics = frame.createGraphics();
 				graphics.setComposite(AlphaComposite.Src);
@@ -1381,11 +1598,11 @@ public class ImageResource {
 		RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		graphics.setRenderingHints(hints);
 		
-		text = getNewLinedWidthText(graphics, arial, text, 90);
+		text = ImageUtility.getNewLinedWidthText(graphics, arial, text, 90);
 		
 		graphics.setColor(Color.BLACK);
 		graphics.setFont(arial);
-		drawText(graphics, text, 95, 305);
+		ImageUtility.drawText(graphics, text, 95, 305);
 		
 		return Response.ok(scrollImage).type("image/png").build();
 	}
@@ -1408,7 +1625,7 @@ public class ImageResource {
 			return Response.status(200).entity("That url is not an image :no_entry:").build();
 		}
 		
-		avatar = asBufferedImage(avatar.getScaledInstance(23, 23, Image.SCALE_DEFAULT));
+		avatar = ImageUtility.asBufferedImage(avatar.getScaledInstance(23, 23, Image.SCALE_DEFAULT));
 		
 		BufferedImage driftImage;
 		try {
@@ -1424,16 +1641,16 @@ public class ImageResource {
 		RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		graphics.setRenderingHints(hints);
 		
-		leftText = getNewLinedWidthText(graphics, arial, leftText, 80);
+		leftText = ImageUtility.getNewLinedWidthText(graphics, arial, leftText, 80);
 		if (rightText != null) {
-			rightText = getNewLinedWidthText(graphics, arial, rightText, 110);
+			rightText = ImageUtility.getNewLinedWidthText(graphics, arial, rightText, 110);
 		}
 		
 		graphics.setColor(Color.WHITE);
 		graphics.setFont(arial);
-		drawText(graphics, leftText, 125, 75);
+		ImageUtility.drawText(graphics, leftText, 125, 75);
 		if (rightText != null) {
-			drawText(graphics, rightText, 265, 75);
+			ImageUtility.drawText(graphics, rightText, 265, 75);
 		}
 		
 		graphics.drawImage(avatar, 270, 335, null);
