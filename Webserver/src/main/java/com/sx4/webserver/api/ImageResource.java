@@ -10,8 +10,10 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +46,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
 import com.jhlabs.image.EdgeFilter;
@@ -51,6 +55,7 @@ import com.jhlabs.image.EmbossFilter;
 import com.jhlabs.image.GaussianFilter;
 import com.sx4.webserver.Fonts;
 import com.sx4.webserver.gif.GifWriter;
+import com.sx4.webserver.image.Body;
 import com.sx4.webserver.image.CannyEdgeDetector;
 import com.sx4.webserver.image.ImageUtility;
 
@@ -60,8 +65,6 @@ public class ImageResource {
 	private static Random random = new Random();
 	
 	public static final String IMAGE_PATH = "resources/images/";
-	
-	private static List<String> statuses = List.of("online", "idle", "dnd", "offline", "streaming", "invisible");
 	
 	private String getParameterType(Parameter parameter) {
 		String typeName = parameter.getType().getName();
@@ -137,7 +140,7 @@ public class ImageResource {
 	@GET
 	@Path("/resize")
 	@Produces({"image/png", "text/plain"})
-	public Response getResizedImage(@QueryParam("image") String imageUrl, @QueryParam("height") int height, @QueryParam("width") int width) throws Exception {
+	public Response getResizedImage(@QueryParam("image") String imageUrl, @QueryParam("height") Integer height, @QueryParam("width") Integer width) throws Exception {
 		URL url;
 		try {
 			url = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
@@ -147,12 +150,39 @@ public class ImageResource {
 		
 		try {
 			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
-				return ImageUtility.asBufferedImage(frame.getScaledInstance(width, height, Image.SCALE_DEFAULT));
+				return ImageUtility.asBufferedImage(frame.getScaledInstance(width == null ? frame.getWidth() : width, height == null ? frame.getHeight() : height, Image.SCALE_DEFAULT));
 			});
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
 			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+		}
+	}
+	
+	@GET
+	@Path("/crop")
+	@Produces({"image/png", "text/plain"})
+	public void getCroppedImage(@Suspended final AsyncResponse asyncResponse, @QueryParam("image") String imageUrl, @QueryParam("height") Integer height, @QueryParam("width") Integer width) throws Exception {
+		URL url;
+		try {
+			url = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
+		} catch (Exception e) {
+			asyncResponse.resume(Response.status(400).entity("That is not a valid url :no_entry:").header("Content-Type", "text/plain").build());
+			return;
+		}
+		
+		try {
+			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
+				if (width > frame.getWidth() || height > frame.getHeight()) {
+					asyncResponse.resume(Response.status(400).entity("You cannot crop an image bigger than its original size :no_entry:").header("Content-Type", "text/plain").build());
+				}
+				
+				return frame.getSubimage((frame.getWidth() / 2) - ((width == null ? frame.getWidth() : width) / 2), (frame.getHeight() / 2) - ((height == null ? frame.getHeight() : height) / 2), width == null ? frame.getWidth() : width, height == null ? frame.getHeight() : height);
+			});
+			
+			asyncResponse.resume(Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build());	
+		} catch (IIOException e) {
+			asyncResponse.resume(Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build());
 		}
 	}
 	
@@ -649,23 +679,22 @@ public class ImageResource {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	@POST
 	@Path("/discord")
 	@Produces({"image/png", "text/plain", "image/gif"})
-	public Response getDiscordImage(Map<String, Object> body) throws Exception {
-		String text = (String) body.get("text");
-		String userName = (String) body.get("userName");
-		String colour = (String) body.get("colour");
-		String avatarUrl = (String) body.get("avatarUrl");
+	public Response getDiscordImage(Body body) throws Exception {
+		String text = body.getString("text");
+		String userName = body.getString("userName");
+		String colour = body.getString("colour");
+		String avatarUrl = body.getString("avatarUrl");
 		
-		Map<String, Map<String, String>> users = (Map<String, Map<String, String>>) body.getOrDefault("users", Map.of());
-		Map<String, Map<String, String>> emotes = (Map<String, Map<String, String>>) body.getOrDefault("emotes", Map.of());
-		Map<String, Map<String, String>> channels = (Map<String, Map<String, String>>) body.getOrDefault("channels", Map.of());
-		Map<String, Map<String, String>> roles = (Map<String, Map<String, String>>) body.getOrDefault("roles", Map.of());
+		Map<String, Map<String, String>> users = body.get("users", Map.of());
+		Map<String, Map<String, String>> emotes = body.get("emotes", Map.of());
+		Map<String, Map<String, String>> channels = body.get("channels", Map.of());
+		Map<String, Map<String, String>> roles = body.get("roles", Map.of());
 		
-		boolean darkTheme = (boolean) body.getOrDefault("darkTheme", true);
-		boolean bot = (boolean) body.get("bot");
+		boolean darkTheme = body.get("darkTheme", true);
+		boolean bot = body.getBoolean("bot");
 		
 		URL url;
 		try {
@@ -744,15 +773,13 @@ public class ImageResource {
 								int moreThanIndex = word.indexOf('>', i + 1);
 								if (moreThanIndex != -1 && word.charAt(moreThanIndex - 1) != '\\') {
 									StringBuilder mentionPrefix = new StringBuilder();
-						        	char prefix;
 						        	
-						        	int prefixIndex = i + 1;
-						        	while (!Character.isLetterOrDigit(prefix = word.charAt(prefixIndex)) && prefixIndex != moreThanIndex) {
-						        		prefixIndex++;
-						        		mentionPrefix.append(prefix);
+						        	int prefixIndex = i;
+						        	while (MentionType.getByPrefix(mentionPrefix.toString()) == MentionType.UNKNOWN && ++prefixIndex != moreThanIndex) {
+						        		mentionPrefix.append(word.charAt(prefixIndex));
 						        	}
 						        	
-						        	if (prefixIndex != moreThanIndex) {
+						        	if (++prefixIndex != moreThanIndex) {
 						        		String mentionString, id;
 						        		int mentionStringWidth;
 										switch (MentionType.getByPrefix(mentionPrefix.toString())) {
@@ -814,7 +841,7 @@ public class ImageResource {
 							        			id = word.substring(prefixIndex, moreThanIndex);
 							        			Map<String, String> channel = channels.get(id);
 							        			
-							        			mentionString = channel == null ? "<" + mentionPrefix.toString() + id + ">" : "#" + channel.get("name");
+							        			mentionString = channel == null ? "#deleted-channel" : "#" + channel.get("name");
 							        			
 							        			mentionStringWidth = graphics.getFontMetrics().stringWidth(mentionString);
 							        			if (textWidth + mentionStringWidth > 975) {
@@ -822,14 +849,18 @@ public class ImageResource {
 													textWidth = 160;
 												} 
 							        			
-							        			graphics.setColor(mentionBox);
-							        			graphics.fillRect(textWidth - 2, textHeight - fontHeight + 11, mentionStringWidth + 5, fontHeight - 5);
-							        			graphics.setColor(mentionText);
+							        			if (channel != null) {
+								        			graphics.setColor(mentionBox);
+								        			graphics.fillRect(textWidth - 2, textHeight - fontHeight + 11, mentionStringWidth + 5, fontHeight - 5);
+								        			graphics.setColor(mentionText);
+							        			}
 							        			
 							        			graphics.drawString(mentionString, textWidth, textHeight);
 							        			textWidth += mentionStringWidth + 7;
 							        			
-							        			graphics.setColor(textColour);
+							        			if (channel != null) {
+							        				graphics.setColor(textColour);
+							        			}
 							        			
 							        			i = moreThanIndex;
 							        			
@@ -846,15 +877,15 @@ public class ImageResource {
 								        				String mentionEmoteUrl = emote.get("url");
 								        				
 								        				try {
-								        					Image emoteImage = ImageIO.read(new URL(mentionEmoteUrl)).getScaledInstance(40, 40, Image.SCALE_DEFAULT);
+								        					Image emoteImage = ImageIO.read(new URL(mentionEmoteUrl)).getScaledInstance(fontHeight, fontHeight, Image.SCALE_DEFAULT);
 								        					
-								        					if (textWidth + 40 > 975) {
+								        					if (textWidth + fontHeight > 975) {
 																textHeight += fontHeight;
 																textWidth = 160;
 															} 
 								        					
 								        					graphics.drawImage(emoteImage, textWidth, textHeight - 31, null);
-								        					textWidth += 40;
+								        					textWidth += fontHeight;
 										        			
 										        			i = moreThanIndex;
 								        					
@@ -869,15 +900,17 @@ public class ImageResource {
 								}
 							}
 							
-							int charWidth = graphics.getFontMetrics().charWidth(character);
-							if (textWidth + charWidth > 975) {
-								textHeight += fontHeight;
-								textWidth = 160;
+							if (character != '\\') {
+								int charWidth = graphics.getFontMetrics().charWidth(character);
+								if (textWidth + charWidth > 975) {
+									textHeight += fontHeight;
+									textWidth = 160;
+								}
+								
+								graphics.drawString(String.valueOf(character), textWidth, textHeight);
+								
+								textWidth += charWidth;
 							}
-							
-							graphics.drawString(String.valueOf(character), textWidth, textHeight);
-							
-							textWidth += charWidth;
 						}
 					} else {
 						int wordWidth = graphics.getFontMetrics().stringWidth(word);
@@ -915,7 +948,7 @@ public class ImageResource {
 					}
 				}
 				
-				return image;
+				return image.getSubimage(0, 0, 1000, textHeight + 25);
 			});
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
@@ -950,15 +983,14 @@ public class ImageResource {
 	@Path("/tweet")
 	@Consumes("application/json")
 	@Produces({"image/png", "text/plain"})
-	@SuppressWarnings("unchecked")
-	public Response getTweetImage(Map<String, Object> body) throws Exception {
-		String displayName = (String) body.get("displayName");
-		String tagName = (String) body.get("name");
-		String avatarUrl = (String) body.get("avatarUrl");
-		List<String> likeAvatarUrls = (List<String>) body.get("urls");
-		int likes = (int) body.get("likes");
-		int retweets = (int) body.get("retweets");
-		String text = (String) body.get("text");
+	public Response getTweetImage(Body body) throws Exception {
+		String displayName = body.getString("displayName");
+		String tagName = body.getString("name");
+		String avatarUrl = body.getString("avatarUrl");
+		List<String> likeAvatarUrls = body.getList("urls", String.class);
+		int likes = body.getInteger("likes");
+		int retweets = body.getInteger("retweets");
+		String text = body.getString("text");
 		
 		URL url;
 		try {
@@ -1332,19 +1364,18 @@ public class ImageResource {
 	@POST
 	@Path("/profile")
 	@Produces({"image/gif", "text/plain", "image/png"})
-	@SuppressWarnings("unchecked")
-	public Response getProfileImage(Map<String, Object> body) throws Exception {	
-		String profileColour = (String) body.get("colour");
-		String userName = (String) body.get("user_name");
-		String backgroundPath = (String) body.get("background_path");
-		String userAvatarUrl = (String) body.get("user_avatar_url");
-		List<String> badges = (List<String>) body.get("badges"); 
-		String birthday = (String) body.get("birthday");
-		String description = (String) body.get("description");
-		String height = (String) body.get("height");
-		String balance = (String) body.get("balance");
-		int reputation = (int) body.get("reputation");
-		List<String> marriedUsers = (List<String>) body.get("married_users");
+	public Response getProfileImage(Body body) throws Exception {	
+		String profileColour = body.getString("colour");
+		String userName = body.getString("user_name");
+		List<Byte> bytes = body.getList("background", Byte.class);
+		String userAvatarUrl = body.getString("user_avatar_url");
+		List<String> badges = body.getList("badges", String.class); 
+		String birthday = body.getString("birthday");
+		String description = body.getString("description");
+		String height = body.getString("height");
+		String balance = body.getString("balance");
+		int reputation = body.getInteger("reputation");
+		List<String> marriedUsers = body.getList("married_users", String.class);
 		
 		URL userAvatar;
 		try {
@@ -1353,11 +1384,18 @@ public class ImageResource {
 			return Response.status(400).build();
 		}
 		
-		BufferedImage image;
-		try {
-			image = ImageIO.read(new URL(backgroundPath));	
-		} catch (Exception e) {
-			image = null;
+		BufferedImage image = null;
+		if (bytes != null) {
+			try {
+				byte[] byteArray = new byte[bytes.size()];
+				for (int i = 0; i < bytes.size(); i++) {
+					byteArray[i] = ((Number) bytes.get(i)).byteValue();
+				}
+				
+				image = ImageIO.read(new ByteArrayInputStream(byteArray));
+			} catch (IOException e) {
+				return Response.status(400).build();
+			}
 		}
 		
 		BufferedImage background = ImageUtility.fillImage(new BufferedImage(2560, 1440, BufferedImage.TYPE_INT_ARGB), image == null ? new Color(114, 137, 218) : new Color(0, 0, 0, 0));
@@ -1471,36 +1509,64 @@ public class ImageResource {
 		return Response.ok(colourImage).type("image/png").build();
 	}	
 	
+	private enum Status {
+		
+		OFFLINE("offline", "invisible"),
+		IDLE("idle"),
+		DND("dnd", "do no disturb"),
+		ONLINE("online"),
+		STREAMING("streaming");
+		
+		private final String[] names;
+		
+		private Status(String... names) {
+			this.names = names;
+		}
+		
+		public String[] getNames() {
+			return this.names;
+		}
+		
+		public static Status getStatusByName(String name) {
+			for (Status status : Status.values()) {
+				for (String names : status.getNames()) {
+					if (names.equals(name)) {
+						return status;
+					}
+				}
+			}
+			
+			return null;
+		}
+		
+	}
+	
 	@GET
 	@Path("/status")
 	@Produces({"image/gif", "text/plain", "image/png"})
-	public Response getStatusImage(@QueryParam("image") String avatarUrl, @QueryParam("status") String status) {
-		status = status.toLowerCase();
-		if (!statuses.contains(status)) {
-			return Response.status(400).entity("Invalid status given :no_entry:").build();
-		}
+	public Response getStatusImage(@QueryParam("image") String avatarUrl, @QueryParam("status") String statusArgument) {
+		Status status = Status.getStatusByName(statusArgument);
 		
-		Color firstColour = null;
-		Color secondColour = null;
-		if (status.equals("offline") || status.equals("invisible")) {
-			firstColour = Color.decode("#747f8d");
-			secondColour = new Color(199, 204, 209);
-		} else if (status.equals("dnd")) {
-			firstColour = Color.decode("#f04747");
-			secondColour = new Color(249, 181, 181);
-		} else if (status.equals("idle")) {
-			firstColour = Color.decode("#faa61a");
-			secondColour = new Color(253, 219, 163);
-		} else if (status.equals("online")) {
-			firstColour = Color.decode("#43b581");
-			secondColour = new Color(180, 225, 205);
-		} else if (status.equals("streaming")) {
-			firstColour = Color.decode("#593695");
-			secondColour = new Color(173, 149, 214);
+		Color colour;
+		switch (status) {
+			case ONLINE:
+				colour = new Color(67, 181, 129);
+				break;
+			case IDLE:
+				colour = new Color(250, 166, 26);
+				break;
+			case DND:
+				colour = new Color(240, 71, 71);
+				break;
+			case OFFLINE:
+				colour = new Color(116, 127, 141);
+				break;
+			case STREAMING:
+				colour = new Color(89, 54, 149);
+				break;
+			default:
+				return Response.status(400).entity("Invalid status was given :no_entry:").build();
 		}
-		
-		Color innerStatusColour = firstColour;
-		Color outerStatusColour = secondColour;
 		
 		URL avatar;
 		try {
@@ -1519,10 +1585,34 @@ public class ImageResource {
 				graphics.setColor(new Color(0, 0, 0, 0));
 				graphics.fillOval(204, 204, 66, 66);
 				graphics.setComposite(AlphaComposite.SrcOver);
-				graphics.setColor(outerStatusColour);
-				graphics.fillOval(210, 210, 54, 54);
-				graphics.setColor(innerStatusColour);
-				graphics.fillOval(213, 213, 48, 48);
+				graphics.setColor(colour);
+				
+				switch (status) {
+					case DND:
+						graphics.fillOval(213, 213, 48, 48);
+						graphics.setComposite(AlphaComposite.Src);
+						graphics.setColor(new Color(0, 0, 0, 0));
+						graphics.fill(new RoundRectangle2D.Float(217, 232, 40, 10, 12, 12));
+						graphics.setComposite(AlphaComposite.SrcOver);
+						break;
+					case IDLE:
+						graphics.fillArc(210, 210, 48, 48, 189, 250);
+						graphics.setComposite(AlphaComposite.Src);
+						graphics.setColor(new Color(0, 0, 0, 0));
+						graphics.fillArc(203, 203, 40, 40, 220, 185);
+						break;
+					case OFFLINE:
+						graphics.fillOval(213, 213, 48, 48);
+						graphics.setComposite(AlphaComposite.Src);
+						graphics.setColor(new Color(0, 0, 0, 0));
+						graphics.fillOval(225, 225, 24, 24);
+						graphics.setComposite(AlphaComposite.SrcOver);
+						break;
+					default:
+						graphics.fillOval(213, 213, 48, 48);
+						break;
+				}
+				
 				
 				return frame;
 			});
@@ -1554,12 +1644,7 @@ public class ImageResource {
 		Map<Integer, Integer> mostCommon = new HashMap<>();
 		for (int y = 0; y < avatar.getHeight(); y++) {
 			for (int x = 0; x < avatar.getWidth(); x++) {
-				int pixelColour = avatar.getRGB(x, y);
-				if (mostCommon.containsKey(pixelColour)) {
-					mostCommon.put(pixelColour, mostCommon.get(pixelColour) + 1);
-				} else {
-					mostCommon.put(pixelColour, 1);
-				}
+				mostCommon.compute(avatar.getRGB(x, y), (key, value) -> value != null ? value + 1 : 1);
 			}
 		}
 
