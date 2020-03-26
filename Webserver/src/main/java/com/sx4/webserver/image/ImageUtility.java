@@ -10,6 +10,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,9 +48,13 @@ public class ImageUtility {
 	}
 	
 	public static Entry<String, ByteArrayOutputStream> updateEachFrame(URL url, Function<BufferedImage, BufferedImage> function) throws Exception {
+		return ImageUtility.updateEachFrame(url.openStream(), function);
+	}
+	
+	public static Entry<String, ByteArrayOutputStream> updateEachFrame(InputStream inputStream, Function<BufferedImage, BufferedImage> function) throws Exception {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		
-		ImageInputStream stream = ImageIO.createImageInputStream(url.openStream());
+		ImageInputStream stream = ImageIO.createImageInputStream(inputStream);
 		Iterator<ImageReader> readers = ImageIO.getImageReaders(stream);
 		
 		if(!readers.hasNext()) {
@@ -79,7 +84,7 @@ public class ImageUtility {
 				try {
 					frame = reader.read(i);
 				}catch(Exception e) {
-					System.err.println(String.format("Skipping frame %s in %s due to %s", (i + 1) + "/" + frames, url, e));
+					System.err.println(String.format("Skipping frame %s due to %s", (i + 1) + "/" + frames, e));
 					
 					continue;
 				}

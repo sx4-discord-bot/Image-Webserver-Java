@@ -1182,14 +1182,21 @@ public class ImageResource {
 		}
 	}
 	
+	private final Map<String, byte[]> welcomerCache = new HashMap<>();
+	
 	@GET
 	@Path("/welcomer")
 	@Produces({"image/gif", "text/plain", "image/png"})
 	public Response getWelcomerImage(@QueryParam("background") String background, @QueryParam("userAvatar") String userAvatar, @QueryParam("userName") String userFullName) throws Exception {
+		boolean cached = false;
+		
 		URL backgroundUrl = null;
 		if (background != null) {
+			background = URLDecoder.decode(background, StandardCharsets.UTF_8);
+			cached = this.welcomerCache.containsKey(background);
+			
 			try {
-				backgroundUrl = new URL(URLDecoder.decode(background, StandardCharsets.UTF_8));
+				backgroundUrl = new URL(background);
 			} catch (Exception e) {
 				return Response.status(400).entity(e.getMessage()).build();
 			}
@@ -1246,12 +1253,8 @@ public class ImageResource {
 		int discrimFontHeight = 50;
 		int width = 1420, height = 280;
 		
-		Graphics2D graphicsAvatar = avatarOutline.createGraphics();
-		graphicsAvatar.drawImage(ImageUtility.circlify(avatar), 5, 5, null);
-		
-		BufferedImage backgroundImage;
 		if (backgroundUrl == null) {
-			backgroundImage  = new BufferedImage(1280, totalHeight, BufferedImage.TYPE_INT_ARGB);
+			BufferedImage backgroundImage  = new BufferedImage(1280, totalHeight, BufferedImage.TYPE_INT_ARGB);
 			Graphics2D graphicsBackground = backgroundImage.createGraphics();
 			
 			int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
@@ -1276,19 +1279,15 @@ public class ImageResource {
 			graphicsBackground.drawString(userDiscrim, (width-nameFontWidth)/2 + nameFontWidth, avatarX + (height-nameFontHeight)/2 + (nameFontHeight - discrimFontHeight) + 30);
 			
 			return Response.ok(ImageUtility.getImageBytes(backgroundImage)).type("image/png").build();
-		} else {	
+		} else if (!cached) {
 			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(backgroundUrl, (frame) -> {
 				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(1280, totalHeight, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphicsBackground = frame.createGraphics();
-			
-				int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
-				Font nameFont = Fonts.UNI_SANS.deriveFont(0, fontSize);
 				
 				RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 				graphicsBackground.setRenderingHints(hints);
 				
-				int nameFontWidth = graphicsBackground.getFontMetrics(nameFont).stringWidth(userName);
 				int welcomeFontWidth = graphicsBackground.getFontMetrics(discrimFont).stringWidth("Welcome");
 				
 				graphicsBackground.drawImage(textHolder, 175 + avatarZ, avatarX, null);
@@ -1297,17 +1296,35 @@ public class ImageResource {
 				graphicsBackground.setFont(discrimFont);
 				graphicsBackground.setColor(Color.WHITE);
 				graphicsBackground.drawString("Welcome", (width-welcomeFontWidth)/2, heightWelcomeText + 40);
-				graphicsBackground.setFont(nameFont);
-				graphicsBackground.drawString(userName, (width-nameFontWidth)/2, avatarX + (height-nameFontHeight)/2 + (nameFontHeight - 20));
-				graphicsBackground.setFont(discrimFont);
-				graphicsBackground.setColor(new Color(153, 170, 183));
-				graphicsBackground.drawString(userDiscrim, (width-nameFontWidth)/2 + nameFontWidth, avatarX + (height-nameFontHeight)/2 + (nameFontHeight - discrimFontHeight) + 30);
 				
 				return frame;
 			});
 			
-			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
-		}
+			this.welcomerCache.put(background, entry.getValue().toByteArray());
+		}		
+		
+		Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(new ByteArrayInputStream(this.welcomerCache.get(background)), (frame) -> {
+			Graphics2D graphicsBackground = frame.createGraphics();
+			
+			int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
+			Font nameFont = Fonts.UNI_SANS.deriveFont(0, fontSize);
+			
+			RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			graphicsBackground.setRenderingHints(hints);
+			
+			int nameFontWidth = graphicsBackground.getFontMetrics(nameFont).stringWidth(userName);
+			
+			graphicsBackground.drawImage(ImageUtility.circlify(avatar), avatarZ + 5, avatarY + 5, null);
+			graphicsBackground.setFont(nameFont);
+			graphicsBackground.drawString(userName, (width-nameFontWidth)/2, avatarX + (height-nameFontHeight)/2 + (nameFontHeight - 20));
+			graphicsBackground.setFont(discrimFont);
+			graphicsBackground.setColor(new Color(153, 170, 183));
+			graphicsBackground.drawString(userDiscrim, (width-nameFontWidth)/2 + nameFontWidth, avatarX + (height-nameFontHeight)/2 + (nameFontHeight - discrimFontHeight) + 30);
+			
+			return frame;
+		});
+		
+		return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();
 	}
 	
 	@GET
