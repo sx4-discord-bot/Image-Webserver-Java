@@ -163,6 +163,11 @@ public class ImageResource {
 	@Path("/crop")
 	@Produces({"image/png", "text/plain"})
 	public void getCroppedImage(@Suspended final AsyncResponse asyncResponse, @QueryParam("image") String imageUrl, @QueryParam("height") Integer height, @QueryParam("width") Integer width) throws Exception {
+		if (width < 1 || height < 1) {
+			asyncResponse.resume(Response.status(400).entity("Height and width both have to be positive :no_entry:").header("Content-Type", "text/plain").build());
+			return;
+		}
+		
 		URL url;
 		try {
 			url = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
@@ -651,7 +656,7 @@ public class ImageResource {
 	
 	public enum MentionType {
 		ROLE("@&"),
-		USER("@!", "@"),
+		USER("@!"),
 		CHANNEL("#"),
 		EMOTE(":", "a:"),
 		UNKNOWN;
@@ -771,13 +776,18 @@ public class ImageResource {
 							char character = word.charAt(i);
 							if (character == '<' && (i == 0 || word.charAt(i - 1) != '\\')) {
 								int moreThanIndex = word.indexOf('>', i + 1);
+								
 								if (moreThanIndex != -1 && word.charAt(moreThanIndex - 1) != '\\') {
 									StringBuilder mentionPrefix = new StringBuilder();
-						        	
-						        	int prefixIndex = i;
-						        	while (MentionType.getByPrefix(mentionPrefix.toString()) == MentionType.UNKNOWN && ++prefixIndex != moreThanIndex) {
-						        		mentionPrefix.append(word.charAt(prefixIndex));
-						        	}
+									
+									int prefixIndex = i;
+									if (word.charAt(prefixIndex + 1) == '@' && word.charAt(prefixIndex + 2) != '!' && word.charAt(prefixIndex + 2) != '&') {
+										mentionPrefix.append("@");
+									} else {
+							        	while (MentionType.getByPrefix(mentionPrefix.toString()) == MentionType.UNKNOWN && ++prefixIndex != moreThanIndex) {
+							        		mentionPrefix.append(word.charAt(prefixIndex));
+							        	}
+									}
 						        	
 						        	if (++prefixIndex != moreThanIndex) {
 						        		String mentionString, id;
@@ -1182,18 +1192,35 @@ public class ImageResource {
 		}
 	}
 	
-	private final Map<String, byte[]> welcomerCache = new HashMap<>();
+	private final Map<Boolean, Map<String, byte[]>> welcomerCache = new HashMap<>();
+	
+	private void putWelcomerCache(boolean gif, String url, byte[] bytes) {
+		this.welcomerCache.compute(gif, (key, value) -> {
+			if (value == null) {
+				Map<String, byte[]> newCache = new HashMap<>();
+
+				newCache.put(url, bytes);
+				
+				return newCache;
+			} else {
+				value.put(url, bytes);
+				
+				return value;
+			}
+		});
+	}
 	
 	@GET
 	@Path("/welcomer")
 	@Produces({"image/gif", "text/plain", "image/png"})
-	public Response getWelcomerImage(@QueryParam("background") String background, @QueryParam("userAvatar") String userAvatar, @QueryParam("userName") String userFullName) throws Exception {
+	public Response getWelcomerImage(@QueryParam("background") String background, @QueryParam("userAvatar") String userAvatar, @QueryParam("userName") String userFullName, @QueryParam("gif") boolean gif) throws Exception {
+		Map<String, byte[]> cache = this.welcomerCache.get(gif);
 		boolean cached = false;
 		
 		URL backgroundUrl = null;
 		if (background != null) {
 			background = URLDecoder.decode(background, StandardCharsets.UTF_8);
-			cached = this.welcomerCache.containsKey(background);
+			cached = cache.containsKey(background);
 			
 			try {
 				backgroundUrl = new URL(background);
@@ -1224,25 +1251,6 @@ public class ImageResource {
 			return Response.status(400).build();
 		}
 		
-		BufferedImage avatar;
-		try {
-			avatar = ImageUtility.circlify(ImageUtility.asBufferedImage(ImageIO.read(userAvatarUrl).getScaledInstance(300, 300, BufferedImage.TYPE_INT_ARGB)));
-		} catch (Exception e) {
-			return Response.status(400).build();
-		}
-		
-		BufferedImage textHolder = new BufferedImage(1280, 280, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D gTextHolder = textHolder.createGraphics();
-		gTextHolder.setColor(new Color(0, 0, 0, 200));
-		gTextHolder.fillRect(0, 0, textHolder.getWidth(), textHolder.getHeight());
-		
-		BufferedImage avatarOutlineRectangle = new BufferedImage(310, 310, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = avatarOutlineRectangle.createGraphics();
-		g.setColor(Color.WHITE);
-		g.fillRect(0, 0, avatarOutlineRectangle.getWidth(), avatarOutlineRectangle.getHeight());
-		
-		BufferedImage avatarOutline = ImageUtility.circlify(avatarOutlineRectangle);
-		
 		String[] userSplit = userFullName.split("#");
 		String userName = userSplit[0];
 		String userDiscrim = "#" + userSplit[1];
@@ -1252,6 +1260,31 @@ public class ImageResource {
 		int nameFontHeight = 100;
 		int discrimFontHeight = 50;
 		int width = 1420, height = 280;
+		
+		BufferedImage avatar;
+		try {
+			avatar = ImageUtility.circlify(ImageUtility.asBufferedImage(ImageIO.read(userAvatarUrl).getScaledInstance(300, 300, BufferedImage.TYPE_INT_ARGB)));
+		} catch (Exception e) {
+			return Response.status(400).build();
+		}
+		
+		BufferedImage textHolder, avatarOutline;
+		if (backgroundUrl == null || !cached) {
+			textHolder = new BufferedImage(1280, 280, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D gTextHolder = textHolder.createGraphics();
+			gTextHolder.setColor(new Color(0, 0, 0, 200));
+			gTextHolder.fillRect(0, 0, textHolder.getWidth(), textHolder.getHeight());
+			
+			BufferedImage avatarOutlineRectangle = new BufferedImage(310, 310, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g = avatarOutlineRectangle.createGraphics();
+			g.setColor(Color.WHITE);
+			g.fillRect(0, 0, avatarOutlineRectangle.getWidth(), avatarOutlineRectangle.getHeight());
+			
+			avatarOutline = ImageUtility.circlify(avatarOutlineRectangle);
+		} else {
+			textHolder = null;
+			avatarOutline = null;
+		}
 		
 		if (backgroundUrl == null) {
 			BufferedImage backgroundImage  = new BufferedImage(1280, totalHeight, BufferedImage.TYPE_INT_ARGB);
@@ -1269,6 +1302,7 @@ public class ImageResource {
 			graphicsBackground.drawImage(textHolder, 175 + avatarZ, avatarX, null);
 		
 			graphicsBackground.drawImage(avatarOutline, avatarZ, avatarY, null);
+			graphicsBackground.drawImage(ImageUtility.circlify(avatar), avatarZ + 5, avatarY + 5, null);
 			graphicsBackground.setFont(discrimFont);
 			graphicsBackground.setColor(Color.WHITE);
 			graphicsBackground.drawString("Welcome", (width-welcomeFontWidth)/2, heightWelcomeText + 40);
@@ -1280,7 +1314,9 @@ public class ImageResource {
 			
 			return Response.ok(ImageUtility.getImageBytes(backgroundImage)).type("image/png").build();
 		} else if (!cached) {
-			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(backgroundUrl, (frame) -> {
+			if (!gif) {
+				BufferedImage frame = ImageIO.read(backgroundUrl);
+				
 				frame = ImageUtility.asBufferedImage(frame.getScaledInstance(1280, totalHeight, Image.SCALE_DEFAULT));
 				
 				Graphics2D graphicsBackground = frame.createGraphics();
@@ -1297,13 +1333,33 @@ public class ImageResource {
 				graphicsBackground.setColor(Color.WHITE);
 				graphicsBackground.drawString("Welcome", (width-welcomeFontWidth)/2, heightWelcomeText + 40);
 				
-				return frame;
-			});
-			
-			this.welcomerCache.put(background, entry.getValue().toByteArray());
+				this.putWelcomerCache(gif, background, ImageUtility.getImageBytes(frame));
+			} else {
+				Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(backgroundUrl, (frame) -> {
+					frame = ImageUtility.asBufferedImage(frame.getScaledInstance(1280, totalHeight, Image.SCALE_DEFAULT));
+					
+					Graphics2D graphicsBackground = frame.createGraphics();
+					
+					RenderingHints hints = new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+					graphicsBackground.setRenderingHints(hints);
+					
+					int welcomeFontWidth = graphicsBackground.getFontMetrics(discrimFont).stringWidth("Welcome");
+					
+					graphicsBackground.drawImage(textHolder, 175 + avatarZ, avatarX, null);
+				
+					graphicsBackground.drawImage(avatarOutline, avatarZ, avatarY, null);
+					graphicsBackground.setFont(discrimFont);
+					graphicsBackground.setColor(Color.WHITE);
+					graphicsBackground.drawString("Welcome", (width-welcomeFontWidth)/2, heightWelcomeText + 40);
+					
+					return frame;
+				});
+				
+				this.putWelcomerCache(gif, background, entry.getValue().toByteArray());
+			}
 		}		
 		
-		Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(new ByteArrayInputStream(this.welcomerCache.get(background)), (frame) -> {
+		Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(new ByteArrayInputStream(cache.get(background)), (frame) -> {
 			Graphics2D graphicsBackground = frame.createGraphics();
 			
 			int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
