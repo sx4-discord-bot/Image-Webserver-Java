@@ -1194,6 +1194,15 @@ public class ImageResource {
 	
 	private final Map<Boolean, Map<String, byte[]>> welcomerCache = new HashMap<>();
 	
+	private byte[] getWelcomerCache(boolean gif, String url) {
+		if (this.welcomerCache.containsKey(gif)) {
+			Map<String, byte[]> cache = this.welcomerCache.get(gif);
+			return cache.get(url);
+		}
+		
+		return null;
+	}
+	
 	private void putWelcomerCache(boolean gif, String url, byte[] bytes) {
 		this.welcomerCache.compute(gif, (key, value) -> {
 			if (value == null) {
@@ -1214,7 +1223,7 @@ public class ImageResource {
 	@Path("/welcomer")
 	@Produces({"image/gif", "text/plain", "image/png"})
 	public Response getWelcomerImage(@QueryParam("background") String background, @QueryParam("userAvatar") String userAvatar, @QueryParam("userName") String userFullName, @QueryParam("gif") boolean gif) throws Exception {
-		Map<String, byte[]> cache = this.welcomerCache.get(gif);
+		Map<String, byte[]> cache = this.welcomerCache.containsKey(gif) ? this.welcomerCache.get(gif) : new HashMap<>();
 		boolean cached = false;
 		
 		URL backgroundUrl = null;
@@ -1359,7 +1368,7 @@ public class ImageResource {
 			}
 		}		
 		
-		Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(new ByteArrayInputStream(cache.get(background)), (frame) -> {
+		Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(new ByteArrayInputStream(this.getWelcomerCache(gif, background)), (frame) -> {
 			Graphics2D graphicsBackground = frame.createGraphics();
 			
 			int fontSize = ImageUtility.getSetSizeText(graphicsBackground, 1025 - graphicsBackground.getFontMetrics(discrimFont).stringWidth(userDiscrim) * 2, Fonts.UNI_SANS, 100, userName);
