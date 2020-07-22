@@ -145,7 +145,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("That is not a valid url :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That is not a valid url").header("Content-Type", "text/plain").build();
 		}
 		
 		try {
@@ -155,7 +155,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -164,7 +164,7 @@ public class ImageResource {
 	@Produces({"image/png", "text/plain"})
 	public void getCroppedImage(@Suspended final AsyncResponse asyncResponse, @QueryParam("image") String imageUrl, @QueryParam("height") Integer height, @QueryParam("width") Integer width) throws Exception {
 		if (width < 1 || height < 1) {
-			asyncResponse.resume(Response.status(400).entity("Height and width both have to be positive :no_entry:").header("Content-Type", "text/plain").build());
+			asyncResponse.resume(Response.status(400).entity("Height and width both have to be positive").header("Content-Type", "text/plain").build());
 			return;
 		}
 		
@@ -172,14 +172,14 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			asyncResponse.resume(Response.status(400).entity("That is not a valid url :no_entry:").header("Content-Type", "text/plain").build());
+			asyncResponse.resume(Response.status(400).entity("That is not a valid url").header("Content-Type", "text/plain").build());
 			return;
 		}
 		
 		try {
 			Entry<String, ByteArrayOutputStream> entry = ImageUtility.updateEachFrame(url, (frame) -> {	
 				if (width > frame.getWidth() || height > frame.getHeight()) {
-					asyncResponse.resume(Response.status(400).entity("You cannot crop an image bigger than its original size :no_entry:").header("Content-Type", "text/plain").build());
+					asyncResponse.resume(Response.status(400).entity("You cannot crop an image bigger than its original size").header("Content-Type", "text/plain").build());
 				}
 				
 				return frame.getSubimage((frame.getWidth() / 2) - ((width == null ? frame.getWidth() : width) / 2), (frame.getHeight() / 2) - ((height == null ? frame.getHeight() : height) / 2), width == null ? frame.getWidth() : width, height == null ? frame.getHeight() : height);
@@ -187,7 +187,7 @@ public class ImageResource {
 			
 			asyncResponse.resume(Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build());	
 		} catch (IIOException e) {
-			asyncResponse.resume(Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build());
+			asyncResponse.resume(Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build());
 		}
 	}
 	
@@ -199,7 +199,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage background = new BufferedImage(419, 493, BufferedImage.TYPE_INT_ARGB);
@@ -218,7 +218,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -230,14 +230,14 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage flag;
 		try {
 			flag = ImageUtility.asBufferedImage(ImageIO.read(new URL("http://www.geonames.org/flags/x/" + flagQuery + ".gif")).getScaledInstance(200, 200, Image.SCALE_DEFAULT));
 		} catch (Exception e) {
-			return Response.status(400).entity("Flag initial is invalid :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Flag initial is invalid").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage image = ImageUtility.asBufferedImage(new BufferedImage(200, 200, BufferedImage.TYPE_INT_ARGB).getScaledInstance(200, 200, Image.SCALE_DEFAULT));
@@ -257,7 +257,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -269,14 +269,14 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage avatar;
 		try {
 			avatar = ImageIO.read(url);
 		} catch (Exception e) {
-			return Response.status(400).entity("The url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The url given is not an image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "trash-meme.jpg"));
@@ -299,27 +299,27 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(firstQuery, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("First image/user is invalid :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("First image/user is invalid").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage firstAvatar;
 		try {
 			firstAvatar = ImageIO.read(url);
 		} catch (Exception e) {
-			return Response.status(400).entity("The first url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The first url given is not an image").header("Content-Type", "text/plain").build();
 		}
 		
 		try {
 			url = new URL(URLDecoder.decode(secondQuery, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Second image/user is invalid :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Second image/user is invalid").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage secondAvatar;
 		try {
 			secondAvatar = ImageIO.read(url);
 		} catch (Exception e) {
-			return Response.status(400).entity("The second url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The second url given is not an image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "whowouldwin.png"));
@@ -341,7 +341,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "fear-meme.png"));
@@ -358,7 +358,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -370,7 +370,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		EmbossFilter filter = new EmbossFilter();
@@ -384,7 +384,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -396,7 +396,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		CannyEdgeDetector canny = new CannyEdgeDetector();
@@ -418,7 +418,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -430,7 +430,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		EdgeFilter filter = new EdgeFilter();
@@ -444,7 +444,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -456,7 +456,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		try {
@@ -473,7 +473,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -485,27 +485,27 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(firstQuery, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("First user is invalid :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("First user is invalid").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage firstAvatar;
 		try {
 			firstAvatar = ImageIO.read(url);
 		} catch (Exception e) {
-			return Response.status(400).entity("The first url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The first url given is not an image").header("Content-Type", "text/plain").build();
 		}
 		
 		try {
 			url = new URL(URLDecoder.decode(secondQuery, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Second user is invalid :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Second user is invalid").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage secondAvatar;
 		try {
 			secondAvatar = ImageIO.read(url);
 		} catch (Exception e) {
-			return Response.status(400).entity("The second url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The second url given is not an image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage image = new BufferedImage(930, 290, BufferedImage.TYPE_INT_ARGB);
@@ -532,7 +532,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 			
 		BufferedImage background = new BufferedImage(493, 511, BufferedImage.TYPE_INT_ARGB);
@@ -552,7 +552,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -564,7 +564,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage background = new BufferedImage(763, 1080, BufferedImage.TYPE_INT_ARGB);
@@ -588,7 +588,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -600,7 +600,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 		
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "gay.png"));
@@ -618,7 +618,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -630,7 +630,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image").header("Content-Type", "text/plain").build();
 		}
 
 		BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "beautiful.png"));
@@ -650,7 +650,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -705,21 +705,21 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(avatarUrl, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user").header("Content-Type", "text/plain").build();
 		}
 		
 		URL emoteUrl;
 		try {
 			emoteUrl = new URL(URLDecoder.decode("https://cdn.discordapp.com/emojis/441255212582174731.png", StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid emote :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid emote").header("Content-Type", "text/plain").build();
 		}
 		
 		Image botImage;
 		try {
 			botImage = ImageIO.read(emoteUrl).getScaledInstance(60, 60, Image.SCALE_DEFAULT);
 		} catch (Exception e) {
-			return Response.status(400).entity("The bot emote url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The bot emote url is not an image").header("Content-Type", "text/plain").build();
 		}
 		
 		int breaks = text.trim().split("\n").length - 1; 
@@ -963,7 +963,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -1006,14 +1006,14 @@ public class ImageResource {
 		try {
 			url = new URL(avatarUrl);
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user").header("Content-Type", "text/plain").build();
 		}
 		
 		Image avatar;
 		try {
 			avatar = ImageIO.read(url).getScaledInstance(72, 72, Image.SCALE_DEFAULT);
 		} catch (Exception e) {
-			return Response.status(400).entity("The url given is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("The url given is not an image").header("Content-Type", "text/plain").build();
 		}
 
 		List<BufferedImage> likeAvatars = new ArrayList<BufferedImage>();
@@ -1021,7 +1021,7 @@ public class ImageResource {
 			try {
 				url = new URL(av);
 			} catch (Exception e) {
-				return Response.status(400).entity("One of the random avatar urls is invalid :no_entry:").header("Content-Type", "text/plain").build();
+				return Response.status(400).entity("One of the random avatar urls is invalid").header("Content-Type", "text/plain").build();
 			}
 				
 			try {
@@ -1111,7 +1111,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image url :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image url").header("Content-Type", "text/plain").build();
 		}
 		
 		int width = 256;
@@ -1147,7 +1147,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -1159,7 +1159,7 @@ public class ImageResource {
 		try {
 			url = new URL(URLDecoder.decode(query, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid user/image url :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("Invalid user/image url").header("Content-Type", "text/plain").build();
 		}
 		
 		int width = 256;
@@ -1188,7 +1188,7 @@ public class ImageResource {
 			
 			return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();	
 		} catch (IIOException e) {
-			return Response.status(400).entity("That url is not an image :no_entry:").header("Content-Type", "text/plain").build();
+			return Response.status(400).entity("That url is not an image").header("Content-Type", "text/plain").build();
 		}
 	}
 	
@@ -1585,7 +1585,7 @@ public class ImageResource {
 		try {
 			colourImage = ImageUtility.fillImage(new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB), colour);
 		} catch (Exception e) {
-			return Response.status(400).entity("Hex code is invalid :no_entry:").build();
+			return Response.status(400).entity("Hex code is invalid").build();
 		}
 		
 		return Response.ok(colourImage).type("image/png").build();
@@ -1647,14 +1647,14 @@ public class ImageResource {
 				colour = new Color(89, 54, 149);
 				break;
 			default:
-				return Response.status(400).entity("Invalid status was given :no_entry:").build();
+				return Response.status(400).entity("Invalid status was given").build();
 		}
 		
 		URL avatar;
 		try {
 			avatar = new URL(URLDecoder.decode(avatarUrl, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("The provided image url is invalid :no_entry:").build();
+			return Response.status(400).entity("The provided image url is invalid").build();
 		}
 		
 		Entry<String, ByteArrayOutputStream> entry;
@@ -1699,7 +1699,7 @@ public class ImageResource {
 				return frame;
 			});
 		} catch (Exception e) {
-			return Response.status(400).entity("The provided image url is not an image :no_entry:").build();
+			return Response.status(400).entity("The provided image url is not an image").build();
 		}
 		
 		return Response.ok(entry.getValue().toByteArray()).type("image/" + entry.getKey()).build();
@@ -1713,20 +1713,23 @@ public class ImageResource {
 		try {
 			avatarUrl = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
 		} catch (Exception e) {
-			return Response.status(400).entity("Invalid image/user :no_entry:").build();
+			return Response.status(400).entity("Invalid image/user").build();
 		}
 		
 		BufferedImage avatar;
 		try {
 			avatar = ImageIO.read(avatarUrl);
 		} catch (IOException e) {
-			return Response.status(400).entity("The provided url is not an image :no_entry:").build();
+			return Response.status(400).entity("The provided url is not an image").build();
 		}
 		
 		Map<Integer, Integer> mostCommon = new HashMap<>();
 		for (int y = 0; y < avatar.getHeight(); y++) {
 			for (int x = 0; x < avatar.getWidth(); x++) {
-				mostCommon.compute(avatar.getRGB(x, y), (key, value) -> value != null ? value + 1 : 1);
+				int rgb = avatar.getRGB(x, y);
+				if (((rgb >> 24) & 0xFF) != 0) {
+					mostCommon.compute(rgb, (key, value) -> value != null ? value + 1 : 1);
+				}
 			}
 		}
 
@@ -1782,14 +1785,14 @@ public class ImageResource {
 		try {
 			avatarUrl = new URL(URLDecoder.decode(imageUrl, StandardCharsets.UTF_8));
 		} catch (MalformedURLException e) {
-			return Response.status(200).entity("Invalid user/image :no_entry:").build();
+			return Response.status(200).entity("Invalid user/image").build();
 		}
 		
 		BufferedImage avatar;
 		try {
 			avatar = ImageIO.read(avatarUrl);
 		} catch (IOException e) {
-			return Response.status(200).entity("That url is not an image :no_entry:").build();
+			return Response.status(200).entity("That url is not an image").build();
 		}
 		
 		avatar = ImageUtility.asBufferedImage(avatar.getScaledInstance(23, 23, Image.SCALE_DEFAULT));
