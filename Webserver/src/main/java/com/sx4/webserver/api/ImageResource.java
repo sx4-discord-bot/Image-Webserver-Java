@@ -28,15 +28,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
@@ -50,6 +44,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.jhlabs.image.EdgeFilter;
 import com.jhlabs.image.EmbossFilter;
 import com.jhlabs.image.GaussianFilter;
@@ -58,6 +53,8 @@ import com.sx4.webserver.gif.GifWriter;
 import com.sx4.webserver.image.Body;
 import com.sx4.webserver.image.CannyEdgeDetector;
 import com.sx4.webserver.image.ImageUtility;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @Path("")
 public class ImageResource {
@@ -1707,7 +1704,7 @@ public class ImageResource {
 	
 	@GET
 	@Path("/commonColour")
-	@Produces({"text/plain"})
+	@Produces({"application/json"})
 	public Response getMostCommonColour(@QueryParam("image") String imageUrl) {
 		URL avatarUrl;
 		try {
@@ -1733,21 +1730,12 @@ public class ImageResource {
 			}
 		}
 
-		Set<Integer> keys = mostCommon.keySet();
-		Integer mostCommonColour = null, mostCommonAmount = null;
-		for (Integer key : keys) {
-			if (mostCommonColour == null) {
-				mostCommonColour = key;
-				mostCommonAmount = mostCommon.get(key);
-			} else {
-				if (mostCommon.get(key) > mostCommonAmount) {
-					mostCommonColour = key;
-					mostCommonAmount = mostCommon.get(key);
-				}
-			}
-		}
+		JSONArray json = new JSONArray();
+		mostCommon.entrySet().stream()
+			.sorted(Entry.comparingByValue(Comparator.reverseOrder()))
+			.forEach(entry -> json.put(new JSONObject().put("colour", entry.getKey()).put("pixels", entry.getValue())));
 		
-		return Response.ok(mostCommonColour).type("text/plain").build();
+		return Response.ok(new JSONObject().put("colours", json).toString()).type("application/json").build();
 	}
 	
 	@GET
