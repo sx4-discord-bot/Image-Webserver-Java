@@ -1,11 +1,20 @@
-apply plugin: 'java-library'
-
-targetCompatibility = 1.10
-sourceCompatibility = 1.10
+plugins {
+	id 'java'
+	id 'application'
+	id 'com.github.johnrengelman.shadow' version '6.0.0'
+}
 
 repositories {
 	jcenter()
 }
+
+shadowJar {
+	archiveBaseName = 'webserver'
+	archiveClassifier = ''
+	archiveVersion = ''
+}
+
+mainClassName = 'com.sx4.webserver.Main'
 
 dependencies {
 	compile group: 'org.glassfish.jersey.core', name: 'jersey-server', version: '2.28'

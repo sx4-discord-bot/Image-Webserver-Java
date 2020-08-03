@@ -30,7 +30,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
@@ -44,7 +43,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.jhlabs.image.EdgeFilter;
 import com.jhlabs.image.EmbossFilter;
 import com.jhlabs.image.GaussianFilter;
